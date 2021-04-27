@@ -1,5 +1,6 @@
 import os, sys
 import pygame
+import pygame.freetype as pygame_freetype
 import random
 from offset import OffsetGroup
 from sprite import BasicSprite
@@ -45,6 +46,12 @@ def main(real_screen):
 
     camera_follow = world.get_player()
 
+    debug_font = pygame_freetype.Font(None)
+    #debug_font.antialiased = False
+    debug_font.fgcolor = (181, 235, 181, 255)
+    debug_font.size = 11
+    debug_text_rect = pygame.Rect(4, 4, 10, 10)
+
     render_list = []
     render_list.append(world)
 
@@ -65,6 +72,10 @@ def main(real_screen):
         screen.blit(background, (0, 0))
         for render_obj in render_list:
             render_obj.render(camera, screen)
+
+        if GameSettings.enable_fps:
+            fps = str(round(clock.get_fps()))
+            debug_font.render_to(screen, debug_text_rect, fps)
 
         real_screen.blit(pygame.transform.scale(screen, (800, 600)), (0, 0))
         pygame.display.flip()

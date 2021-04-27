@@ -48,7 +48,9 @@ class GameWorld:
             if event.type == KEYDOWN:
                 if event.key == K_ESCAPE:
                     return False
-                if event.key == K_r:
+                elif event.key == K_d:
+                    GameSettings.enable_fps = not GameSettings.enable_fps
+                elif event.key == K_r:
                     self.restart = True
                     return False
                 elif event.key == K_RIGHT:
