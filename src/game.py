@@ -1,34 +1,36 @@
 import os, sys
 import pygame
+import random
+from offset import OffsetGroup
+from sprite import BasicSprite
+from world import GameWorld
 
 from pygame.locals import *
+from constants import *
 
-def load_png_image(name):
-    path = os.path.join('assets', 'img', name + '.png')
-    img_surface = pygame.image.load(path)
-    img_surface = img_surface.convert_alpha()
-    return img_surface, img_surface.get_rect()
-
-class BasicSprite(pygame.sprite.Sprite):
-    def __init__(self, img_name='floor'):
-        pygame.sprite.Sprite.__init__(self)
-        self.image, self.rect = load_png_image(img_name)
-        self.base_width = self.rect.width
-        self.base_height = self.rect.height
-
-    def set_pos(self, x, y):
-        self.rect.center = (x, y)
-
-
-# here we go
-def main():
+#####################################
+# Stuff outside of my restart loop
+def initialize():
     pygame.init()
+
     flags = 0 # to set full screen use FULLSCREEN instead of 0
     real_screen = pygame.display.set_mode((800, 600), flags)
-    screen = pygame.Surface((200, 150))
+
+    return real_screen
+
+def shutdown():
+    pygame.quit()
+# Stuff outside of my restart loop
+######################################
+
+# here we go
+def main(real_screen):
+    if len(sys.argv) > 1:
+        GameSettings.game_scale = int(sys.argv[1])
+    screen = pygame.Surface((200 * GameSettings.game_scale, 150 * GameSettings.game_scale))
     screen = screen.convert()
 
-    pygame.display.set_caption("Urg")
+    pygame.display.set_caption(random.choice(["Urgh", "Banguin", "Sandomius", "Ess", "Vee Sheem Han", "Spakio", "Gevenera", "Soll Bax Me"]))
 
     background = pygame.Surface(screen.get_size())
     background = background.convert()
@@ -36,40 +38,45 @@ def main():
 
     screen.blit(background, (0, 0))
 
-    sprites = pygame.sprite.Group()
-
-    x_start = 100
-    y_start = 40
-    for i in range(4):
-        for j in range(4):
-            sp = BasicSprite('floor')
-            sp.set_pos(x_start + (i * 14), y_start + (j * 14))
-            sprites.add(sp)
-
-    sprites.draw(screen)
-    pygame.display.flip()
-
     clock = pygame.time.Clock()
+
+    camera = Rect(0, 0, 1, 1)
+    world = GameWorld(clock)
+
+    camera_follow = world.get_player()
+
+    render_list = []
+    render_list.append(world)
 
     # game loop
     running = True
     while running:
         clock.tick(60)
-        for event in pygame.event.get():
+        for event in pygame.event.get(QUIT):
             if event.type == QUIT:
                 running = False
-            elif event.type == KEYDOWN and event.key == K_ESCAPE:
-                running = False
+
+        status = world.update()
+        running = running and status
+
+        camera.topleft = camera_follow.get_pos()
 
         # draw stuff
         screen.blit(background, (0, 0))
-        sprites.draw(screen)
+        for render_obj in render_list:
+            render_obj.render(camera, screen)
 
         real_screen.blit(pygame.transform.scale(screen, (800, 600)), (0, 0))
         pygame.display.flip()
 
-    pygame.quit()
+    return world.restart
 
 # standard python start stuffff
 if __name__ == "__main__":
-    main()
+    real_screen = initialize()
+
+    restart = True
+    while restart:
+        restart = main(real_screen)
+
+    shutdown()
