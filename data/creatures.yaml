@@ -1,0 +1,23 @@
+player:
+    image: dude
+    attributes:
+        hp: 8
+        base_attack: 1
+        moves: false
+        active: true
+goon:
+    image: goon
+    attributes:
+        hp: 1
+        base_attack: 1
+    loot:
+        - {type: pickup, subtype: moni}
+eyepod:
+    image: eyepod
+    attributes:
+        hp: 4
+        base_attack: 7
+        move_wait: 2
+        paths: true
+    loot:
+        - {type: pickup, subtype: moni_pile}

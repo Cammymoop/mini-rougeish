@@ -92,19 +92,21 @@ def recursive_room_chopper(world, tile_map, x, y, w, h, depth):
             # couldn't get a valid cut in a few tries so we'll just not cut this room any further
             room_furnisher(world, tile_map, x, y, w, h)
             return
+        # End while not valid_cut
 
 
-    if valid_cut:
-        # Cut out the wall
-        for i in range(short_side):
-            vx, vy = x, y
-            vx += slice_position if vertical else i
-            vy += i if vertical else slice_position
-            if i == door_position:
+    # Cut out the wall
+    for i in range(short_side):
+        vx, vy = x, y
+        vx += slice_position if vertical else i
+        vy += i if vertical else slice_position
+        if i == door_position:
+            # Chance to place closed door
+            if random.randint(1, 6) < 6:
                 door = world.add_entity_at(vx, vy, False, 'door', 'door')
                 door.closed = True
-            else:
-                tile_map.clear_tile(vx, vy)
+        else:
+            tile_map.clear_tile(vx, vy)
 
     # Recurse
     if vertical:
