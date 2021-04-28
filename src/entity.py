@@ -43,6 +43,7 @@ class Entity(BasicSprite):
 
         # Create Sprite
         super().__init__(img_name, visible, layer)
+        self.subtype = subtype
 
         # Set position on grid
         self.world = world
@@ -69,6 +70,7 @@ class Entity(BasicSprite):
         if self.moves:
             self.move_wait = 0
             self.can_diagonal = False
+            self.friendly_fire = False
 
         if ent_type == 'creature':
             if 'loot' in creature_spec:
@@ -154,6 +156,13 @@ class Entity(BasicSprite):
                 delta_x, delta_y = deltas
             else:
                 delta_x, delta_y = self.simple_follow_player()
+
+            if not self.friendly_fire:
+                stuff = self.world.what_is_at(self.grid_x + delta_x, self.grid_y + delta_y)
+                for e in stuff['entities']:
+                    if e.entity_type == 'creature' and e.subtype != 'player':
+                        # Friendly Fire! let's not
+                        return
 
             self.world.attempt_move(self, delta_x, delta_y)
             self.wait_counter = self.move_wait
