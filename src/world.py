@@ -2,6 +2,7 @@ import pygame
 from pygame.locals import *
 from constants import *
 
+import math
 import collections
 import heapq
 
@@ -136,6 +137,9 @@ class GameWorld:
                 continue
 
             e.take_damage(entity.get_attack())
+
+            # update the pathfinding at the target in case it died
+            self.update_pathfinding_node(ex + xdelta, ey + ydelta)
             entity.bump_animation(xdelta, ydelta)
             return False
         
@@ -256,12 +260,24 @@ class GameWorld:
 
         def heuristic(coord):
             x, y = coord
-            return abs(x - dest_x) + abs(y - dest_y)
+            return math.sqrt(pow(x - dest_x, 2) + pow(y - dest_y, 2))
 
-        def adjacents(coord):
-            x, y = coord
-            return [((1, 0), (x + 1, y)), ((0, -1), (x, y - 1)), ((-1, 0), (x - 1, y)), ((0, 1), (x, y + 1))]
+        adjacent_deltas = []
+        for dx in [-1, 0, 1]:
+            for dy in [-1, 0, 1]:
+                if dx == 0 and dy == 0:
+                    continue
+                adjacent_deltas.append((dx, dy))
 
+        def delta_add(delta, coord):
+            return (delta[0] + coord[0], delta[1] + coord[1])
+
+        def is_diagonal(delta):
+            return delta[0] != 0 and delta[1] != 0
+
+        def straights(delta):
+            return [(delta[0], 0), (0, delta[1])]
+        
         path_found = False
 
         delta_from = {start: None}
@@ -277,16 +293,26 @@ class GameWorld:
                 break
 
             # Always cost 1 to move for now
-            next_cost = node_cost[cur] + 1
-            for delta, adj in adjacents(cur):
+            old_cost = node_cost[cur]
+            next_cost = old_cost + 1
+            for delta in adjacent_deltas:
+                adj = delta_add(delta, cur)
                 val = self.pathfinding_map[adj[0]][adj[1]]
-                if val > strength:
-                    print("wall or something")
-                    print(adj)
-                    print(start)
+                # If the node is the destination, ignore strength (attack player)
+                if val > strength and adj != dest:
                     continue
+                # I'm doing diagonal movement for nice pathing but it needs to be a valid path orthoganally too
+                if is_diagonal(delta):
+                    available_straights = 2
+                    for s_delta in straights(delta):
+                        s_val = self.pathfinding_map[cur[0] + s_delta[0]][cur[1] + s_delta[1]]
+                        if s_val > strength:
+                            available_straights -= 1
+                    if available_straights < 1:
+                        continue
+
+
                 if adj in node_cost and node_cost[adj] <= next_cost:
-                    print("already check from shorter distance")
                     continue
                 node_cost[adj] = next_cost
                 priority = next_cost + heuristic(adj)
@@ -295,7 +321,7 @@ class GameWorld:
                 position_from[adj] = cur
 
         if not path_found:
-            print("Could not find path, " + str(len(node_cost)) + " nodes checked")
+            #print("Could not find path, " + str(len(node_cost)) + " nodes checked")
             return False
 
         def to_world(coord):

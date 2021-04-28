@@ -68,6 +68,7 @@ class Entity(BasicSprite):
 
         if self.moves:
             self.move_wait = 0
+            self.can_diagonal = False
 
         if ent_type == 'creature':
             if 'loot' in creature_spec:
@@ -160,11 +161,21 @@ class Entity(BasicSprite):
     def pathfind_follow_player(self):
         player_x, player_y = self.world.get_player().get_grid_x_y()
         path = self.world.pathfind(self.grid_x, self.grid_y, player_x, player_y)
-        print(path)
         if not path:
             return False
         # Follow the first delta move in the path
-        return path[0]
+        x_delta, y_delta = path[0]
+
+        # orthogal move or we can move diagonally
+        if self.can_diagonal or x_delta == 0 or y_delta == 0:
+            return (x_delta, y_delta)
+
+        # diagonal move we need to translate to orthogonal
+        self.prefer_horizontal = not self.prefer_horizontal
+        if self.prefer_horizontal:
+            return (x_delta, 0)
+        else:
+            return (0, y_delta)
 
     def simple_follow_player(self):
         player_x, player_y = self.world.get_player().get_grid_x_y()
