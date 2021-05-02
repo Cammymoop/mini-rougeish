@@ -42,7 +42,7 @@ class GameWorld:
         self.player = Entity(self, 0, 0, True, 'creature', 'player')
         self.entity_group.add(self.player)
 
-        blip_x = 200 - 8
+        blip_x = 270 - 8
         blip_y = 8 + ((self.player.hp-1) * 5)
         self.health_blips = []
         for i in range(self.player.hp):

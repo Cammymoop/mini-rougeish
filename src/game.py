@@ -15,7 +15,7 @@ def initialize():
     pygame.init()
 
     flags = 0 # to set full screen use FULLSCREEN instead of 0
-    real_screen = pygame.display.set_mode((800, 600), flags)
+    real_screen = pygame.display.set_mode((810, 600), flags)
 
     return real_screen
 
@@ -28,7 +28,7 @@ def shutdown():
 def main(real_screen):
     if len(sys.argv) > 1:
         GameSettings.game_scale = int(sys.argv[1])
-    screen = pygame.Surface((200 * GameSettings.game_scale, 150 * GameSettings.game_scale))
+    screen = pygame.Surface((270 * GameSettings.game_scale, 200 * GameSettings.game_scale))
     screen = screen.convert()
 
     pygame.display.set_caption(random.choice(["Urgh", "Banguin", "Sandomius", "Ess", "Vee Sheem Han", "Spakio", "Gevenera", "Soll Bax Me"]))
@@ -77,7 +77,7 @@ def main(real_screen):
             fps = str(round(clock.get_fps()))
             debug_font.render_to(screen, debug_text_rect, fps)
 
-        real_screen.blit(pygame.transform.scale(screen, (800, 600)), (0, 0))
+        real_screen.blit(pygame.transform.scale(screen, (810, 600)), (0, 0))
         pygame.display.flip()
 
     return world.restart

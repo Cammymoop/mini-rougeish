@@ -14,4 +14,4 @@ class GameSettings:
     enable_fps = False
 
 def get_screen_center_offset():
-    return (-100 * GameSettings.game_scale, -75 * GameSettings.game_scale)
+    return (-135 * GameSettings.game_scale, -100 * GameSettings.game_scale)
