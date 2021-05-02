@@ -162,13 +162,17 @@ class Entity(BasicSprite):
 
             if self.movement_pattern == 'chase':
                 deltas = self.pathfind_follow_player()
-                if not deltas:
-                    return
-                delta_x, delta_y = deltas
             elif self.movement_pattern == 'naive':
-                delta_x, delta_y = self.simple_follow_player()
+                deltas = self.simple_follow_player()
             elif self.movement_pattern == 'random':
-                delta_x, delta_y = self.get_random_move()
+                deltas = self.get_random_move()
+            else:
+                print("Bad movement pattern: " + str(self.movement_pattern))
+                return
+
+            if not deltas:
+                return
+            delta_x, delta_y = deltas
 
             if not self.friendly_fire:
                 stuff = self.world.what_is_at(self.grid_x + delta_x, self.grid_y + delta_y)
@@ -189,6 +193,9 @@ class Entity(BasicSprite):
         for dx, dy in moves:
             if self.world.can_move(self, dx, dy):
                 open_moves.append((dx, dy))
+
+        if len(open_moves) < 1:
+            return False
 
         return random.choice(open_moves)
 

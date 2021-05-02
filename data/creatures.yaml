@@ -1,5 +1,5 @@
 player:
-    image: dude
+    image: dude_hi
     attributes:
         hp: 8
         base_attack: 1
@@ -11,7 +11,7 @@ goon:
     attributes:
         hp: 1
         base_attack: 1
-        move_pattern: naive
+        movement_pattern: naive
     loot:
         - {type: pickup, subtype: moni}
 cubeo:
@@ -19,16 +19,16 @@ cubeo:
     attributes:
         hp: 6
         base_attack: 1
-        move_pattern: random
+        movement_pattern: random
         move_wait: 1
     loot:
         - {type: pickup, subtype: moni}
 eyepod:
-    image: eyepod
+    image: eyepod_hi
     attributes:
         hp: 4
         base_attack: 7
-        move_pattern: chase
+        movement_pattern: chase
         move_wait: 2
         paths: true
     loot:

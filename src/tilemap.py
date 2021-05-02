@@ -25,7 +25,7 @@ class TileMap:
         if y not in self.tiles:
             self.tiles[y] = {}
         sp = BasicSprite(tile_img, visible)
-        sp.set_pos(x * 14, y * 14)
+        sp.set_pos(x * GRID_WIDTH, y * GRID_WIDTH)
         self.sprite_container.add(sp)
         self.tiles[y][x] = sp
 
