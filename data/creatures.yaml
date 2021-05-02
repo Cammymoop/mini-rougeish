@@ -14,10 +14,19 @@ goon:
         movement_pattern: naive
     loot:
         - {type: pickup, subtype: moni}
+big_cubeo:
+    image: big_cubeo
+    attributes:
+        hp: 6
+        base_attack: 2
+        movement_pattern: random
+        move_wait: 1
+    loot:
+        - {type: pickup, subtype: moni}
 cubeo:
     image: cubeo
     attributes:
-        hp: 6
+        hp: 3
         base_attack: 1
         movement_pattern: random
         move_wait: 1
