@@ -11,6 +11,16 @@ goon:
     attributes:
         hp: 1
         base_attack: 1
+        move_pattern: naive
+    loot:
+        - {type: pickup, subtype: moni}
+cubeo:
+    image: cubeo
+    attributes:
+        hp: 6
+        base_attack: 1
+        move_pattern: random
+        move_wait: 1
     loot:
         - {type: pickup, subtype: moni}
 eyepod:
@@ -18,6 +28,7 @@ eyepod:
     attributes:
         hp: 4
         base_attack: 7
+        move_pattern: chase
         move_wait: 2
         paths: true
     loot:

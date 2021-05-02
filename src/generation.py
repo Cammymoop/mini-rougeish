@@ -164,8 +164,8 @@ def room_furnisher(world, tile_map, x, y, w, h):
         unused_spots.remove(spot)
         spot_x, spot_y = spot
 
-        enemy_type = 'goon'
-        if include_enemies == 1 and random.randint(1, 6) > 5:
+        enemy_type = random.choice(['goon', 'goon', 'goon', 'cubeo'])
+        if include_enemies == 1 and random.randint(1, 9) < 2:
             enemy_type = 'eyepod'
 
         world.add_entity_at(spot_x, spot_y, False, 'creature', enemy_type)

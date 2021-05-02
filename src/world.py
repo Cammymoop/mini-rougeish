@@ -155,6 +155,12 @@ class GameWorld:
         if len(self.move_que) < self.max_qued_moves:
             self.move_que.append((xdelta, ydelta))
 
+    def can_move(self, entity, xdelta, ydelta):
+        ex, ey = entity.get_grid_x_y()
+        target_stuff = self.what_is_at(ex + xdelta, ey + ydelta)
+        if not target_stuff['tile']:
+            return False
+
     def attempt_move(self, entity, xdelta, ydelta):
         ex, ey = entity.get_grid_x_y()
         target_stuff = self.what_is_at(ex + xdelta, ey + ydelta)

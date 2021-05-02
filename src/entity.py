@@ -1,6 +1,7 @@
 import pygame
 import math
 import yaml
+import random
 
 from constants import *
 from sprite import BasicSprite
@@ -59,7 +60,6 @@ class Entity(BasicSprite):
         self.has_inventory = False
 
         self.moves = False
-        self.paths = False
         self.animates = False
 
         # Special defaults
@@ -73,6 +73,7 @@ class Entity(BasicSprite):
             self.move_wait = 0
             self.can_diagonal = False
             self.friendly_fire = False
+            self.movement_pattern = "naive"
 
         if ent_type == 'creature':
             if 'loot' in creature_spec:
@@ -159,13 +160,15 @@ class Entity(BasicSprite):
                 self.wait_counter -= 1
                 return
 
-            if self.paths:
+            if self.movement_pattern == 'chase':
                 deltas = self.pathfind_follow_player()
                 if not deltas:
                     return
                 delta_x, delta_y = deltas
-            else:
+            elif self.movement_pattern == 'naive':
                 delta_x, delta_y = self.simple_follow_player()
+            elif self.movement_pattern == 'random':
+                delta_x, delta_y = self.get_random_move()
 
             if not self.friendly_fire:
                 stuff = self.world.what_is_at(self.grid_x + delta_x, self.grid_y + delta_y)
@@ -176,6 +179,18 @@ class Entity(BasicSprite):
 
             self.world.attempt_move(self, delta_x, delta_y)
             self.wait_counter = self.move_wait
+
+    def get_random_move(self):
+        moves = [(0, 1), (0, -1), (1, 0), (-1, 0)]
+        if self.can_diagonal:
+            moves.extend([(1, 1), (-1, -1), (1, -1), (-1, 1)])
+
+        open_moves = []
+        for dx, dy in moves:
+            if self.world.can_move(self, dx, dy):
+                open_moves.append((dx, dy))
+
+        return random.choice(open_moves)
 
     def pathfind_follow_player(self):
         player_x, player_y = self.world.get_player().get_grid_x_y()
