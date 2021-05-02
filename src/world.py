@@ -10,6 +10,7 @@ from sprite import BasicSprite
 from offset import OffsetGroup
 from entity import Entity
 from tilemap import TileMap
+from sprite import BasicSprite
 
 from generation import generate_chunk
 
@@ -26,17 +27,28 @@ class GameWorld:
 
         self.maps = {0: {}}
 
+        # If this entity group fills up with too many entities (a really big floor) it may cause performance problems
+        # not worrying about it for now but might make a deactivated entity group or something
         self.entity_group = OffsetGroup()
         offset_x, offset_y = get_screen_center_offset()
         self.entity_group.set_camera_offset(offset_x, offset_y)
+
+        self.ui_group = OffsetGroup()
 
         generate_chunk(self, 0, 0)
 
         self.clear_entities_at(0, 0)
         self.player = Entity(self, 0, 0, True, 'creature', 'player')
-        #self.player.moves = False
-        #self.player.hp = 8
         self.entity_group.add(self.player)
+
+        blip_x = 200 - 8
+        blip_y = 8 + ((self.player.hp-1) * 5)
+        self.health_blips = []
+        for i in range(self.player.hp):
+            spr = BasicSprite('blip', True, 20)
+            spr.set_pos(blip_x, blip_y - (5 * i))
+            self.ui_group.add(spr)
+            self.health_blips.append(spr)
 
         self.move_que = collections.deque()
         self.animating = False
@@ -47,7 +59,9 @@ class GameWorld:
         self.pathfinding_map = []
         self.pf_offset_x = 0
         self.pf_offset_y = 0
-        #self.update_whole_pathfinding_map()
+
+        self.cam_shake_intensity = 4
+        self.cam_shake_countdown = 0
 
         # Reveal the room where the player starts
         self.reveal(0, 0)
@@ -98,13 +112,27 @@ class GameWorld:
         if not self.animating and len(self.move_que) > 0:
             self.handle_move_que()
 
+        self.cam_shake_update()
+
         return True
+
+    def delta_time_seconds(self):
+        return self.clock.get_time() / 1000
+    
+    def cam_shake_update(self):
+        if self.cam_shake_countdown < 0:
+            return
+        self.cam_shake_countdown = max(0, self.cam_shake_countdown - self.delta_time_seconds())
+
+    def player_stat_change(self):
+        hp = self.player.hp
+        for i in range(len(self.health_blips)):
+            self.health_blips[i].visible = True if hp > i else False
 
     def time_advance(self):
         for e in self.entity_group.sprites():
             if e.moves and e.active:
                 e.do_a_thing()
-
 
     def get_player(self):
         return self.player
@@ -427,11 +455,27 @@ class GameWorld:
             for t_map in self.maps[row].values():
                 self.render_list.append(t_map)
 
+    def do_camera_shake(self, length, intensity=4):
+        self.cam_shake_intensity = intensity
+        self.cam_shake_countdown = length
+
+    def shake_this_camera(self, camera):
+        if self.cam_shake_countdown <= 0:
+            return camera
+        new_cam = camera.copy()
+        new_cam.x += random.randint(0, (self.cam_shake_intensity * 2)) - self.cam_shake_intensity
+        new_cam.y += random.randint(0, (self.cam_shake_intensity * 2)) - self.cam_shake_intensity
+        return new_cam
+
     def render(self, camera, surface):
+        camera = self.shake_this_camera(camera)
         for t_map in self.render_list:
             t_map.render(camera, surface)
 
         self.entity_group.render(camera, surface)
+
+        ui_camera = self.shake_this_camera(pygame.Rect(0, 0, 10, 10))
+        self.ui_group.render(ui_camera, surface)
 
     def add_chunk(self, chunk_x, chunk_y, chunk):
         self.maps[chunk_y][chunk_x] = chunk

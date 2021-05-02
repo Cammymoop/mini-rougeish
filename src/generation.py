@@ -142,12 +142,18 @@ def room_furnisher(world, tile_map, x, y, w, h):
         for j in range(y, y + h):
             unused_spots.append((i, j))
 
+    # Random chance that first pot in a room gets replaced with a chest
+    do_chest = random.randint(1, 10) < 2
+
     for i in range(include_pots):
         spot = random.choice(unused_spots)
         unused_spots.remove(spot)
         spot_x, spot_y = spot
 
-        world.add_entity_at(spot_x, spot_y, False, 'bustable', 'pot')
+        subtype = 'pot'
+        if i == 0 and do_chest:
+            subtype = 'chest'
+        world.add_entity_at(spot_x, spot_y, False, 'bustable', subtype)
 
         stuff_so_far += 1
         if stuff_so_far >= max_things:

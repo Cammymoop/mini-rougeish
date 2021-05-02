@@ -21,3 +21,5 @@ eyepod:
         paths: true
     loot:
         - {type: pickup, subtype: moni_pile}
+
+# Should make a loot.yaml with loot pools that stuff can drop loot from

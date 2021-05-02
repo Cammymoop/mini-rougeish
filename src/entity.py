@@ -126,6 +126,10 @@ class Entity(BasicSprite):
         if self.hp <= 0:
             self.die()
 
+        if self.entity_type == 'creature' and self.subtype == 'player':
+            self.world.player_stat_change()
+            self.world.do_camera_shake(0.2)
+
     def reveal(self):
         self.visible = True
         if self.moves:
