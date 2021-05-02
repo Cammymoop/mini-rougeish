@@ -66,7 +66,7 @@ def main(real_screen):
         status = world.update()
         running = running and status
 
-        camera.topleft = camera_follow.get_pos()
+        camera.topleft = camera_follow.get_follow_pos()
 
         # draw stuff
         screen.blit(background, (0, 0))

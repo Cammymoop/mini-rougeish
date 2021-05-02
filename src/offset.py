@@ -11,6 +11,7 @@ class OffsetGroup(pygame.sprite.LayeredUpdates):
     def draw(self, surface):
         """draw all visible sprites in the right order onto the passed surface
         sprites are offset by the group offset
+        idk how the dirty code works I just copied it lmao
 
         LayeredUpdates.draw(surface): return Rect_list
 

@@ -11,6 +11,7 @@ from offset import OffsetGroup
 from entity import Entity
 from tilemap import TileMap
 from sprite import BasicSprite
+from inventory import Item, Inventory, item_from_pickup
 
 from generation import generate_chunk
 
@@ -63,31 +64,35 @@ class GameWorld:
         self.cam_shake_intensity = 4
         self.cam_shake_countdown = 0
 
+        self.keyboard_focus = 'game'
+
         # Reveal the room where the player starts
         self.reveal(0, 0)
 
     def update(self):
         for event in pygame.event.get():
             if event.type == KEYDOWN:
-                if event.key == K_ESCAPE:
-                    return False
-                elif event.key == K_d:
+                if event.key == K_p:
                     GameSettings.enable_fps = not GameSettings.enable_fps
                 elif event.key == K_r:
                     self.restart = True
                     return False
-                elif event.key == K_RIGHT:
-                    self.que_move(1, 0)
-                elif event.key == K_LEFT:
-                    self.que_move(-1, 0)
-                elif event.key == K_DOWN:
-                    self.que_move(0, 1)
-                elif event.key == K_UP:
-                    self.que_move(0, -1)
-                elif event.key == K_SPACE:
-                    if not self.animating:
-                        self.time_advance()
-                        self.animating = True
+
+                if self.keyboard_focus == 'game':
+                    if event.key == K_ESCAPE:
+                        return False
+                    elif event.key == K_RIGHT or event.key == K_d:
+                        self.que_move(1, 0)
+                    elif event.key == K_LEFT or event.key == K_a:
+                        self.que_move(-1, 0)
+                    elif event.key == K_DOWN or event.key == K_s:
+                        self.que_move(0, 1)
+                    elif event.key == K_UP or event.key == K_w:
+                        self.que_move(0, -1)
+                    elif event.key == K_SPACE:
+                        if not self.animating:
+                            self.time_advance()
+                            self.animating = True
 
         if self.animating:
             tick_length = self.clock.get_time()
@@ -188,7 +193,9 @@ class GameWorld:
                 e.visible = False
                 self.reveal(px, py)
             elif e.entity_type == 'pickup':
-                # TODO inventory!!!!
+                pickup_item = item_from_pickup(e)
+                if pickup_item:
+                    self.player.inventory.add_item(pickup_item)
                 e.take_damage({'amount': 999})
 
         path_center_x = (PATHFINDING_WIDTH//2) - self.pf_offset_x

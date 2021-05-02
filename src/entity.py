@@ -4,6 +4,7 @@ import yaml
 
 from constants import *
 from sprite import BasicSprite
+from inventory import Inventory
 
 def int_bounce_tween(from_v, to_v, progress):
     # double the distance because I'm making progress go 0 -> .5 -> 0
@@ -23,18 +24,18 @@ class Entity(BasicSprite):
     def __init__(self, world, x, y, visible=True, ent_type='creature', subtype='goon'):
 
         # Figure out which image to use
-        img_name = 'no_img'
+        self.img_name = 'no_img'
         if ent_type == 'bustable' or ent_type == 'pickup':
-            img_name = subtype
+            self.img_name = subtype
         elif ent_type == 'door':
-            img_name = 'door'
+            self.img_name = 'door'
         elif ent_type == 'creature':
             creature_spec = {}
             with open('data/creatures.yaml') as creature_data:
                 creature_spec = yaml.load(creature_data)[subtype]
             if GameSettings.enable_fps:
                 print(creature_spec)
-            img_name = creature_spec['image'] if 'image' in creature_spec else 'no_img'
+            self.img_name = creature_spec['image'] if 'image' in creature_spec else 'no_img'
 
         # Figure out which layer to use
         layer = 4
@@ -42,7 +43,7 @@ class Entity(BasicSprite):
             layer = 2
 
         # Create Sprite
-        super().__init__(img_name, visible, layer)
+        super().__init__(self.img_name, visible, layer)
         self.subtype = subtype
 
         # Set position on grid
@@ -55,6 +56,7 @@ class Entity(BasicSprite):
         self.living = True
         self.hp = 1
         self.base_attack = 1
+        self.has_inventory = False
 
         self.moves = False
         self.paths = False
@@ -96,6 +98,10 @@ class Entity(BasicSprite):
             self.target_pos_y = py
 
             self.anim_bounce = False
+            self.non_move_animation = False
+
+        if self.has_inventory:
+            self.inventory = Inventory()
 
     def get_grid_x_y(self):
         return self.grid_x, self.grid_y
@@ -207,6 +213,12 @@ class Entity(BasicSprite):
 
     ########################
     # Animation functions
+    def get_follow_pos(self):
+        if self.non_move_animation:
+            return (self.origin_pos_x, self.origin_pos_y)
+        else:
+            return self.get_pos()
+
     def change_look(self, left=True):
         if self.img_flipped != left:
             self.image = pygame.transform.flip(self.image, True, False)
@@ -225,6 +237,7 @@ class Entity(BasicSprite):
         # Look left or right
         if ox != x:
             self.change_look(ox-x > 0)
+        self.non_move_animation = False
 
     def no_anim(self):
         ox, oy = self.get_pos()
@@ -232,10 +245,12 @@ class Entity(BasicSprite):
         self.origin_pos_y = oy
         self.target_pos_x = ox
         self.target_pos_y = oy
+        self.non_move_animation = False
     
     def bump_animation(self, dx, dy):
         px, py = self.get_pos()
         self.animate_to(px + (dx * Entity.bump_constant), py + (dy * Entity.bump_constant), True)
+        self.non_move_animation = True
 
     def animate_update(self, progress):
         if self.anim_bounce:

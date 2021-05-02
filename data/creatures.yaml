@@ -5,6 +5,7 @@ player:
         base_attack: 1
         moves: false
         active: true
+        has_inventory: true
 goon:
     image: goon
     attributes:
@@ -22,4 +23,4 @@ eyepod:
     loot:
         - {type: pickup, subtype: moni_pile}
 
-# Should make a loot.yaml with loot pools that stuff can drop loot from
+# Should make a loot.yaml with loot pools that stuff can drop loot from maybe
