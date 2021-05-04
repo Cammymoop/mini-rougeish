@@ -22,6 +22,8 @@ class Entity(BasicSprite):
     bump_constant = 5
     bump_progress_multiplier = 2.0
 
+    SCREEN_SLEEP_DISTANCE = 18
+
     def __init__(self, world, x, y, visible=True, ent_type='creature', subtype='goon'):
 
         # Figure out which image to use
@@ -55,6 +57,7 @@ class Entity(BasicSprite):
 
         # Default attributes, can be overriden by creature spec
         self.living = True
+        self.hidden = True
         self.hp = 1
         self.base_attack = 1
         self.has_inventory = False
@@ -86,7 +89,7 @@ class Entity(BasicSprite):
 
         # Automatic attributes
         if self.moves:
-            self.active = visible
+            self.active = not self.hidden
             self.wait_counter = self.move_wait
             self.prefer_horizontal = True
 
@@ -129,7 +132,7 @@ class Entity(BasicSprite):
         self.hp -= damage['amount']
 
         # Immediately counterattack if still waiting to move
-        if hasattr(self, 'wait_counter'):
+        if hasattr(self, 'wait_counter') and hasattr(self, 'no_wait_on_hit'):
             self.wait_counter = 0
 
         if self.hp <= 0:
@@ -140,6 +143,7 @@ class Entity(BasicSprite):
             self.world.do_camera_shake(0.2)
 
     def reveal(self):
+        self.hidden = False
         self.visible = True
         if self.moves:
             self.active = True
@@ -154,15 +158,37 @@ class Entity(BasicSprite):
             for drop in self.drops:
                 self.world.add_entity_at(self.grid_x, self.grid_y, self.visible, drop['type'], drop['subtype'])
 
+    def sleep(self):
+        self.visible = False
+        if self.moves:
+            self.active = False
+
+    def wake(self):
+        self.visible = True
+        if self.moves:
+            self.active = True
+
     def do_a_thing(self):
-        if not self.moves:
+        if not self.moves or not self.living:
             return
+
+        if not self.active:
+            if not self.far_offscreen():
+                self.wake()
+            else:
+                return
+        elif self.far_offscreen():
+            self.sleep()
+            return
+
         if self.entity_type == 'creature':
             if self.wait_counter > 0:
                 self.wait_counter -= 1
                 return
 
             if self.movement_pattern == 'chase':
+                if self.far_offscreen():
+                    print('offscreen as I suspected')
                 deltas = self.pathfind_follow_player()
             elif self.movement_pattern == 'naive':
                 deltas = self.simple_follow_player()
@@ -232,6 +258,13 @@ class Entity(BasicSprite):
             return horizontal if self.prefer_horizontal else vertical
         else:
             return horizontal if abs(x_diff) > abs(y_diff) else vertical
+
+    def far_offscreen(self):
+        player_x, player_y = self.world.get_player().get_grid_x_y()
+        x_diff = abs(player_x - self.grid_x)
+        y_diff = abs(player_y - self.grid_y)
+
+        return max(x_diff, y_diff) > Entity.SCREEN_SLEEP_DISTANCE
     # Combat, AI, Visibility etc
     #################################
 

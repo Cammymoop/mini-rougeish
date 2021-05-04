@@ -5,7 +5,7 @@ from tilemap import TileMap
 
 def generate_floor():
     worms = 2
-    chunks_per = 2
+    chunks_per = 4
     chunks = set()
 
     directions = [(1, 0), (-1, 0), (0, 1), (0, -1)]

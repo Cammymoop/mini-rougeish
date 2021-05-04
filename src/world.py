@@ -147,7 +147,8 @@ class GameWorld:
 
     def time_advance(self):
         for e in self.entity_group.sprites():
-            if e.moves and e.active:
+            # Call even if not active so they can wake themselves up
+            if e.moves and not e.hidden:
                 e.do_a_thing()
 
     def get_player(self):
@@ -289,6 +290,11 @@ class GameWorld:
     def update_pathfinding_node(self, world_x, world_y):
         pf_x, pf_y = (world_x + self.pf_offset_x, world_y + self.pf_offset_y)
 
+        if min(pf_x, pf_y) < 0 or pf_x > PATHFINDING_WIDTH - 1 or pf_y > PATHFINDING_HEIGHT - 1:
+            print("Tried to update outside pathfinding space")
+            print((world_x, world_y), (pf_x, pf_y))
+            return
+
         tile = self.get_tile_from_world_coord(world_x, world_y)
         if not tile or not tile.visible:
             self.pathfinding_map[pf_x][pf_y] = 10
@@ -308,6 +314,16 @@ class GameWorld:
     # otherwise return list of x, y deltas to follow path
     def pathfind(self, start_x, start_y, dest_x, dest_y, strength=0, abs_path=False):
         start = (start_x + self.pf_offset_x, start_y + self.pf_offset_y)
+
+        def outside_check(coord):
+            x, y = coord
+            return min(x, y) < 0 or x > PATHFINDING_WIDTH - 1 or y > PATHFINDING_HEIGHT - 1
+
+        if outside_check(start):
+            print("Tried to pathfind from outside pathfinding space")
+            print((start_x, start_y), start)
+            return []
+        
 
         dest_x, dest_y = (dest_x + self.pf_offset_x, dest_y + self.pf_offset_y)
         dest = (dest_x, dest_y)
@@ -351,6 +367,8 @@ class GameWorld:
             next_cost = old_cost + 1
             for delta in adjacent_deltas:
                 adj = delta_add(delta, cur)
+                if outside_check(adj):
+                    continue
                 val = self.pathfinding_map[adj[0]][adj[1]]
                 # If the node is the destination, ignore strength (attack player)
                 if val > strength and adj != dest:
@@ -407,11 +425,9 @@ class GameWorld:
 
         adjacents = [(-1, 0), (0, -1), (1, 0), (0, 1)]
 
-        revealed = 0
         infinity_protection = 200
         while len(to_check) > 0:
             for px, py in to_check.copy():
-                revealed += 1
                 # Show everything here
                 stuff_here = self.what_is_at(px, py)
                 stuff_here['tile'].visible = True

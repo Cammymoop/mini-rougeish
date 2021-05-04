@@ -39,6 +39,7 @@ eyepod:
         base_attack: 7
         movement_pattern: chase
         move_wait: 2
+        no_wait_on_hit: true
         paths: true
     loot:
         - {type: pickup, subtype: moni_pile}
