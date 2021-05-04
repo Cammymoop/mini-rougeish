@@ -3,21 +3,60 @@ from constants import *
 import random
 from tilemap import TileMap
 
-def generate_chunk(world, chunk_x, chunk_y):
+def generate_floor():
+    worms = 2
+    chunks_per = 4
+    chunks = set()
+
+    directions [(1, 0), (-1, 0), (0, 1), (0, -1)]
+
+    for worm_i in range(worms):
+        cur_x = 0
+        cur_y = 0
+
+        set_chunks = 0
+        while set_chunks < chunks_per:
+            chunk_pos = (cur_x, cur_y)
+            if chunk_pos not in chunks:
+                chunks.add(chunk_pos)
+                set_chunks += 1
+
+            xd, yd = random.choice(directions)
+            cur_x += xd
+            cur_y += yd
+
+    # define inter-chunk door positions
+    doors = {}
+    for chunk_pos in chunks:
+        this_chunk_x, this_chunk_y = chunk_pos
+
+        if (this_chunk_x + 1, this_chunk_y) in chunks:
+            doors[(this_chunk_x, this_chunk_y, 'right')] = random.randint(0, TM_CHUNK_SIZE - 2)
+
+        if (this_chunk_x, this_chunk_y + 1) in chunks:
+            doors[(this_chunk_x, this_chunk_y, 'down')] = random.randint(0, TM_CHUNK_SIZE - 2)
+
+    return {'chunks': chunks, 'starting-chunk': random.choice(chunks), 'doors': doors}
+
+
+def generate_chunk(world, floor_data, chunk_pos):
+    chunk_x, chunk_y = chunk_pos
     chunk_map = TileMap()
     world.add_chunk(chunk_x, chunk_y, chunk_map)
 
     floor_variants = 2
 
+    visible = GameSettings.enable_fps
+
     # Fill whole chunk first
     for x in range(TM_CHUNK_SIZE):
         for y in range(TM_CHUNK_SIZE):
-            chunk_map.place_tile(x, y, False, 'floor' + str(random.randint(1, floor_variants)))
+            chunk_map.place_tile(x, y, visible, 'floor' + str(random.randint(1, floor_variants)))
 
     # Chop up vertically and horizontally to create irregular rooms
-    recursive_room_chopper(world, chunk_map, 0, 0, TM_CHUNK_SIZE, TM_CHUNK_SIZE, 1)
+    recursive_room_chopper(world, chunk_map, chunk_pos, 0, 0, TM_CHUNK_SIZE, TM_CHUNK_SIZE, 1)
 
-def recursive_room_chopper(world, tile_map, x, y, w, h, depth):
+def recursive_room_chopper(world, tile_map, chunk_pos, x, y, w, h, depth):
     done = False
     # infinite recursion protection
     if depth > 25:
@@ -110,11 +149,11 @@ def recursive_room_chopper(world, tile_map, x, y, w, h, depth):
 
     # Recurse
     if vertical:
-        recursive_room_chopper(world, tile_map, x, y, slice_position, h, depth + 1)
-        recursive_room_chopper(world, tile_map, x + slice_position + 1, y, w - 1 - slice_position, h, depth + 1)
+        recursive_room_chopper(world, tile_map, chunk_pos, x, y, slice_position, h, depth + 1)
+        recursive_room_chopper(world, tile_map, chunk_pos, x + slice_position + 1, y, w - 1 - slice_position, h, depth + 1)
     else:
-        recursive_room_chopper(world, tile_map, x, y, w, slice_position, depth + 1)
-        recursive_room_chopper(world, tile_map, x, y + slice_position + 1, w, h - 1 - slice_position, depth + 1)
+        recursive_room_chopper(world, tile_map, chunk_pos, x, y, w, slice_position, depth + 1)
+        recursive_room_chopper(world, tile_map, chunk_pos, x, y + slice_position + 1, w, h - 1 - slice_position, depth + 1)
 
 def room_furnisher(world, tile_map, x, y, w, h):
     area = w * h

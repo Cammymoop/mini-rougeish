@@ -13,7 +13,7 @@ from tilemap import TileMap
 from sprite import BasicSprite
 from inventory import Item, Inventory, item_from_pickup
 
-from generation import generate_chunk
+from generation import generate_chunk, generate_floor
 
 import random
 
@@ -36,7 +36,12 @@ class GameWorld:
 
         self.ui_group = OffsetGroup()
 
-        generate_chunk(self, 0, 0)
+        self.floor_data = generate_floor()
+        if GameSettings.enable_fps:
+            for chunk in self.floor_data['chunks']:
+                generate_chunk(self, self.floor_data, chunk))
+        else:
+            generate_chunk(self, self.floor_data, self.floor_data['starting_chunk']))
 
         self.clear_entities_at(0, 0)
         self.player = Entity(self, 0, 0, True, 'creature', 'player')
@@ -463,6 +468,10 @@ class GameWorld:
     # translate world x, y -> in_chunk_x, in_chunk_y, chunk_x, chunk_y
     def translate_chunk_coords(self, x, y):
         return x % TM_CHUNK_SIZE, y % TM_CHUNK_SIZE, x // TM_CHUNK_SIZE, y // TM_CHUNK_SIZE
+
+    def chunk_coord_to_world_coord(self, chunk_pos, in_chunk_x, in_chunk_y):
+        chunk_x, chunk_y = chunk_pos
+        return (in_chunk_x + (chunk_x * TM_CHUNK_SIZE), in_chunk_y + (chunk_y * TM_CHUNK_SIZE))
 
     def update_render_list(self):
         self.render_list = []
