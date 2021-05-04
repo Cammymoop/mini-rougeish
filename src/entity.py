@@ -68,6 +68,8 @@ class Entity(BasicSprite):
         elif ent_type == 'creature':
             self.moves = True
             self.animates = True
+        elif ent_type == 'door':
+            self.closed = True
 
         if self.moves:
             self.move_wait = 0

@@ -181,7 +181,6 @@ def recursive_room_chopper(world, tile_map, chunk_pos, floor_data, x, y, w, h, d
 
                 world_x, world_y = world.chunk_coord_to_world_coord(chunk_pos, vx, vy)
                 door = world.add_entity_at(world_x, world_y, visible, 'door', 'door')
-                door.closed = True
         else:
             tile_map.clear_tile(vx, vy)
 

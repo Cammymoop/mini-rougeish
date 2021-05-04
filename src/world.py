@@ -122,8 +122,8 @@ class GameWorld:
                     if entity.animates and entity.active:
                         entity.no_anim()
 
-                if self.player == entity:
-                    self.after_player_move()
+                    if self.player == entity:
+                        self.after_player_move()
 
         if not self.animating and len(self.move_que) > 0:
             self.handle_move_que()
@@ -207,7 +207,7 @@ class GameWorld:
         stuff_here = self.what_is_at(px, py)
 
         for e in stuff_here['entities']:
-            if e.entity_type == 'door' and e.closed:
+            if e.entity_type == 'door':
                 e.closed = False
                 e.visible = False
                 self.reveal(px, py)
@@ -407,9 +407,11 @@ class GameWorld:
 
         adjacents = [(-1, 0), (0, -1), (1, 0), (0, 1)]
 
+        revealed = 0
         infinity_protection = 200
         while len(to_check) > 0:
             for px, py in to_check.copy():
+                revealed += 1
                 # Show everything here
                 stuff_here = self.what_is_at(px, py)
                 stuff_here['tile'].visible = True
@@ -435,10 +437,11 @@ class GameWorld:
                         if (nx, ny) in checked or (nx, ny) in to_check:
                             continue
 
-                        #is_new_chunk = self.pending_chunk_exists_at(nx, ny)
-                        #if is_new_chunk:
-                            #_, _, chunk_x, chunk_y = self.translate_chunk_coords(nx, ny)
-                            #generate_chunk(self, self.floor_data, (chunk_x, chunk_y))
+                        is_new_chunk = self.pending_chunk_exists_at(nx, ny)
+                        if is_new_chunk:
+                            print('revealing new chunk')
+                            _, _, chunk_x, chunk_y = self.translate_chunk_coords(nx, ny)
+                            generate_chunk(self, self.floor_data, (chunk_x, chunk_y))
 
                         stuff = self.what_is_at(nx, ny)
 
