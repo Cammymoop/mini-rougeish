@@ -7,8 +7,11 @@ def generate_floor():
     worms = 2
     chunks_per = 4
     chunks = set()
+    chunk_properties = {}
 
     directions = [(1, 0), (-1, 0), (0, 1), (0, -1)]
+
+    chunk_shapes = ['classic', 'huge-rooms', 'outer-loop']
 
     for worm_i in range(worms):
         cur_x = 0
@@ -19,6 +22,14 @@ def generate_floor():
             chunk_pos = (cur_x, cur_y)
             if chunk_pos not in chunks:
                 chunks.add(chunk_pos)
+                shape = random.choice(chunk_shapes)
+                chunk_properties[chunk_pos] = {'position': chunk_pos, 'shape': shape}
+                if shape == 'huge-rooms':
+                    chunk_properties[chunk_pos]['max-depth'] = 3
+                elif shape == 'outer-loop':
+                    ring_width = random.randint(3, 5)
+                    chunk_properties[chunk_pos]['ring-start'] = ring_width 
+                    chunk_properties[chunk_pos]['ring-stop'] = TM_CHUNK_SIZE - 2 - ring_width 
                 set_chunks += 1
 
             xd, yd = random.choice(directions)
@@ -36,47 +47,67 @@ def generate_floor():
         if (this_chunk_x, this_chunk_y + 1) in chunks:
             doors[(this_chunk_x, this_chunk_y, 'down')] = random.randint(0, TM_CHUNK_SIZE - 2)
 
-    return {'chunks': chunks, 'starting-chunk': random.choice(list(chunks)), 'doors': doors}
+    return {'chunks': chunks, 'chunk-properties': chunk_properties, 'starting-chunk': random.choice(list(chunks)), 'doors': doors}
 
 
-def generate_chunk(world, floor_data, chunk_pos):
+def generate_chunk(world, floor_data, chunk_properties):
+    print(chunk_properties)
+    chunk_pos = chunk_properties['position']
     chunk_x, chunk_y = chunk_pos
-    chunk_map = TileMap(chunk_x, chunk_y)
-    world.add_chunk(chunk_x, chunk_y, chunk_map)
-
-    floor_variants = 2
+    tile_map = TileMap(chunk_x, chunk_y)
+    world.add_chunk(chunk_x, chunk_y, tile_map)
 
     visible = GameSettings.debug_mode
 
     # Fill whole chunk first
     for x in range(TM_CHUNK_SIZE - 1):
         for y in range(TM_CHUNK_SIZE - 1):
-            chunk_map.place_tile(x, y, visible, 'floor' + str(random.randint(1, floor_variants)))
+            tile_map.place_tile(x, y, visible, 'floor' + str(random.randint(1, FLOOR_VARIANTS)))
 
-    if (chunk_x, chunk_y, 'right') in floor_data['doors']:
-        door_y = floor_data['doors'][(chunk_x, chunk_y, 'right')]
-        door_x = TM_CHUNK_SIZE - 1
-        chunk_map.place_tile(door_x, door_y, visible, 'floor' + str(random.randint(1, floor_variants)))
 
-        visible = GameSettings.debug_mode
-        world_x, world_y = world.chunk_coord_to_world_coord(chunk_pos, door_x, door_y)
-        door = world.add_entity_at(world_x, world_y, visible, 'door', 'door')
-    if (chunk_x, chunk_y, 'down') in floor_data['doors']:
-        door_x = floor_data['doors'][(chunk_x, chunk_y, 'down')]
-        door_y = TM_CHUNK_SIZE - 1
-        chunk_map.place_tile(door_x, door_y, visible, 'floor' + str(random.randint(1, floor_variants)))
+    # chopper settings by chunk shape
+    x, y = (0, 0)
+    w, h = (TM_CHUNK_SIZE - 1, TM_CHUNK_SIZE - 1)
 
-        visible = GameSettings.debug_mode
-        world_x, world_y = world.chunk_coord_to_world_coord(chunk_pos, door_x, door_y)
-        door = world.add_entity_at(world_x, world_y, visible, 'door', 'door')
+    # carve out loop
+    if chunk_properties['shape'] == 'outer-loop':
+        start_pos = chunk_properties['ring-start']
+        stop_pos = chunk_properties['ring-stop']
+        x, y = (start_pos + 1, start_pos + 1)
+        w, h = (stop_pos - start_pos - 1, stop_pos - start_pos - 1)
 
+        for ring_x in range(start_pos, stop_pos + 1):
+            tile_map.clear_tile(ring_x, start_pos)
+            tile_map.clear_tile(ring_x, stop_pos)
+        for ring_y in range(start_pos + 1, stop_pos):
+            tile_map.clear_tile(start_pos, ring_y)
+            tile_map.clear_tile(stop_pos, ring_y)
+
+        # make a few doors into the inside
+        door_pos_h = start_pos + random.randint(1, stop_pos - start_pos - 1)
+        door_pos_v = start_pos + random.randint(1, stop_pos - start_pos - 1)
+
+        door_x = random.choice([start_pos, stop_pos])
+        door_y = random.choice([start_pos, stop_pos])
+
+        tile_map.place_tile(door_x, door_pos_v, visible, 'floor' + str(random.randint(1, FLOOR_VARIANTS)))
+        world_x, world_y = world.chunk_coord_to_world_coord(chunk_pos, door_x, door_pos_v)
+        world.add_entity_at(world_x, world_y, visible, 'door', 'door')
+
+        tile_map.place_tile(door_pos_h, door_y, visible, 'floor' + str(random.randint(1, FLOOR_VARIANTS)))
+        world_x, world_y = world.chunk_coord_to_world_coord(chunk_pos, door_pos_h, door_y)
+        world.add_entity_at(world_x, world_y, visible, 'door', 'door')
+
+    place_doors(world, tile_map, chunk_pos, floor_data)
     # Chop up vertically and horizontally to create irregular rooms
-    recursive_room_chopper(world, chunk_map, chunk_pos, floor_data, 0, 0, TM_CHUNK_SIZE - 1, TM_CHUNK_SIZE - 1, 1)
+    recursive_room_chopper(world, tile_map, chunk_properties, floor_data, x, y, w, h, 1)
 
-def recursive_room_chopper(world, tile_map, chunk_pos, floor_data, x, y, w, h, depth):
+def recursive_room_chopper(world, tile_map, chunk_properties, floor_data, x, y, w, h, depth):
     done = False
     # infinite recursion protection
     if depth > 25:
+        done = True
+    if 'max-depth' in chunk_properties and depth > chunk_properties['max-depth']:
         done = True
     # I dont want to make any rooms slimmer than 3 tiles so dont chop any rooms
     # that are less than 7 tiles in either direction
@@ -98,8 +129,10 @@ def recursive_room_chopper(world, tile_map, chunk_pos, floor_data, x, y, w, h, d
         done = True
 
     if done:
-        room_furnisher(world, chunk_pos, tile_map, x, y, w, h)
+        room_furnisher(world, chunk_properties, tile_map, x, y, w, h)
         return
+
+    chunk_pos = chunk_properties['position']
 
     valid_cut = False
 
@@ -164,7 +197,7 @@ def recursive_room_chopper(world, tile_map, chunk_pos, floor_data, x, y, w, h, d
         cut_tries -= 1
         if cut_tries < 0:
             # couldn't get a valid cut in a few tries so we'll just not cut this room any further
-            room_furnisher(world, chunk_pos, tile_map, x, y, w, h)
+            room_furnisher(world, chunk_properties, tile_map, x, y, w, h)
             return
         # End while not valid_cut
 
@@ -186,14 +219,15 @@ def recursive_room_chopper(world, tile_map, chunk_pos, floor_data, x, y, w, h, d
 
     # Recurse
     if vertical:
-        recursive_room_chopper(world, tile_map, chunk_pos, floor_data, x, y, slice_position, h, depth + 1)
-        recursive_room_chopper(world, tile_map, chunk_pos, floor_data, x + slice_position + 1, y, w - 1 - slice_position, h, depth + 1)
+        recursive_room_chopper(world, tile_map, chunk_properties, floor_data, x, y, slice_position, h, depth + 1)
+        recursive_room_chopper(world, tile_map, chunk_properties, floor_data, x + slice_position + 1, y, w - 1 - slice_position, h, depth + 1)
     else:
-        recursive_room_chopper(world, tile_map, chunk_pos, floor_data, x, y, w, slice_position, depth + 1)
-        recursive_room_chopper(world, tile_map, chunk_pos, floor_data, x, y + slice_position + 1, w, h - 1 - slice_position, depth + 1)
+        recursive_room_chopper(world, tile_map, chunk_properties, floor_data, x, y, w, slice_position, depth + 1)
+        recursive_room_chopper(world, tile_map, chunk_properties, floor_data, x, y + slice_position + 1, w, h - 1 - slice_position, depth + 1)
 
-def room_furnisher(world, chunk_pos, tile_map, x, y, w, h):
+def room_furnisher(world, chunk_properties, tile_map, x, y, w, h):
     area = w * h
+    chunk_pos = chunk_properties['position']
 
     if area <= 12:
         include_enemies = random.choice([0, 0, 0, 0, 0, 1, 1])
@@ -281,3 +315,23 @@ def room_furnisher(world, chunk_pos, tile_map, x, y, w, h):
         tile_map.clear_tile(spot_x, spot_y)
         tile_map.place_tile(spot_x, spot_y, visible, 'floor_crack' + str(random.randint(1, crack_variants)))
 
+# Place inter-chunk tiles and doors
+# do it before chopping rooms so they can avoid chopping right next to the doors
+def place_doors(world, tile_map, chunk_pos, floor_data):
+    chunk_x, chunk_y = chunk_pos
+    visible = GameSettings.debug_mode
+
+    if (chunk_x, chunk_y, 'right') in floor_data['doors']:
+        door_y = floor_data['doors'][(chunk_x, chunk_y, 'right')]
+        door_x = TM_CHUNK_SIZE - 1
+        tile_map.place_tile(door_x, door_y, visible, 'floor' + str(random.randint(1, FLOOR_VARIANTS)))
+
+        world_x, world_y = world.chunk_coord_to_world_coord(chunk_pos, door_x, door_y)
+        door = world.add_entity_at(world_x, world_y, visible, 'door', 'door')
+    if (chunk_x, chunk_y, 'down') in floor_data['doors']:
+        door_x = floor_data['doors'][(chunk_x, chunk_y, 'down')]
+        door_y = TM_CHUNK_SIZE - 1
+        tile_map.place_tile(door_x, door_y, visible, 'floor' + str(random.randint(1, FLOOR_VARIANTS)))
+
+        world_x, world_y = world.chunk_coord_to_world_coord(chunk_pos, door_x, door_y)
+        door = world.add_entity_at(world_x, world_y, visible, 'door', 'door')

@@ -37,13 +37,14 @@ class GameWorld:
         self.ui_group = OffsetGroup()
 
         self.floor_data = generate_floor()
+        self.starting_chunk = self.floor_data['starting-chunk']
         if GameSettings.debug_mode:
             for chunk in self.floor_data['chunks']:
-                generate_chunk(self, self.floor_data, chunk)
+                generate_chunk(self, self.floor_data, self.floor_data['chunk-properties'][chunk])
         else:
-            generate_chunk(self, self.floor_data, self.floor_data['starting-chunk'])
+            generate_chunk(self, self.floor_data, self.floor_data['chunk-properties'][self.starting_chunk])
 
-        start_x, start_y = self.chunk_coord_to_world_coord(self.floor_data['starting-chunk'], 0, 0)
+        start_x, start_y = self.chunk_coord_to_world_coord(self.floor_data['starting-chunk'], 1, 1)
 
         self.clear_entities_at(start_x, start_y)
         self.player = Entity(self, start_x, start_y, True, 'creature', 'player')
@@ -79,11 +80,9 @@ class GameWorld:
     def update(self):
         for event in pygame.event.get():
             if event.type == KEYDOWN:
-                if event.key == K_p:
-                    GameSettings.enable_fps = not GameSettings.enable_fps
                 if event.key == K_LEFTBRACKET:
                     GameSettings.debug_mode = not GameSettings.debug_mode
-                if event.key == K_p:
+                elif event.key == K_p:
                     GameSettings.enable_fps = not GameSettings.enable_fps
                 elif event.key == K_r:
                     self.restart = True
@@ -468,7 +467,7 @@ class GameWorld:
                         if is_new_chunk:
                             print('revealing new chunk')
                             _, _, chunk_x, chunk_y = self.translate_chunk_coords(nx, ny)
-                            generate_chunk(self, self.floor_data, (chunk_x, chunk_y))
+                            generate_chunk(self, self.floor_data, self.floor_data['chunk-properties'][(chunk_x, chunk_y)])
 
                         stuff = self.what_is_at(nx, ny)
 

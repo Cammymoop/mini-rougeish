@@ -35,7 +35,7 @@ class Entity(BasicSprite):
         elif ent_type == 'creature':
             creature_spec = {}
             with open('data/creatures.yaml') as creature_data:
-                creature_spec = yaml.load(creature_data)[subtype]
+                creature_spec = yaml.safe_load(creature_data)[subtype]
             #if GameSettings.debug_mode:
                 #print(creature_spec)
             self.img_name = creature_spec['image'] if 'image' in creature_spec else 'no_img'

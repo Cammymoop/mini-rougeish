@@ -2,6 +2,8 @@ import os, sys
 import pygame
 import pygame.freetype as pygame_freetype
 import random
+import math
+
 from offset import OffsetGroup
 from sprite import BasicSprite
 from world import GameWorld
@@ -15,7 +17,13 @@ def initialize():
     pygame.init()
 
     flags = 0 # to set full screen use FULLSCREEN instead of 0
-    real_screen = pygame.display.set_mode((810, 600), flags)
+    screen_info = pygame.display.Info()
+
+    print('screen info', screen_info.current_w, screen_info.current_h)
+    print('calc scale', math.floor((screen_info.current_h * .9) / GameSettings.internal_h))
+
+    GameSettings.scaler = math.floor((screen_info.current_h * .9) / GameSettings.internal_h)
+    real_screen = pygame.display.set_mode(get_real_res(), flags)
 
     return real_screen
 
@@ -28,7 +36,7 @@ def shutdown():
 def main(real_screen):
     if len(sys.argv) > 1:
         GameSettings.game_scale = int(sys.argv[1])
-    screen = pygame.Surface((270 * GameSettings.game_scale, 200 * GameSettings.game_scale))
+    screen = pygame.Surface(get_internal_res())
     screen = screen.convert()
 
     pygame.display.set_caption(random.choice(["Urgh", "Banguin", "Sandomius", "Ess", "Vee Sheem Han", "Spakio", "Gevenera", "Soll Bax Me"]))
@@ -77,7 +85,7 @@ def main(real_screen):
             fps = str(round(clock.get_fps()))
             debug_font.render_to(screen, debug_text_rect, fps)
 
-        real_screen.blit(pygame.transform.scale(screen, (810, 600)), (0, 0))
+        real_screen.blit(pygame.transform.scale(screen, get_real_res()), (0, 0))
         pygame.display.flip()
 
     return world.restart
