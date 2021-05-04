@@ -1,6 +1,7 @@
 from constants import *
 
 import random
+import math
 from tilemap import TileMap
 
 def generate_floor():
@@ -12,6 +13,7 @@ def generate_floor():
     directions = [(1, 0), (-1, 0), (0, 1), (0, -1)]
 
     chunk_shapes = ['classic', 'huge-rooms', 'outer-loop']
+    shape_weights = [5, 2, 1]
 
     for worm_i in range(worms):
         cur_x = 0
@@ -22,7 +24,7 @@ def generate_floor():
             chunk_pos = (cur_x, cur_y)
             if chunk_pos not in chunks:
                 chunks.add(chunk_pos)
-                shape = random.choice(chunk_shapes)
+                shape = random.choices(chunk_shapes, weights=shape_weights)[0]
                 chunk_properties[chunk_pos] = {'position': chunk_pos, 'shape': shape}
                 if shape == 'huge-rooms':
                     chunk_properties[chunk_pos]['max-depth'] = 3
@@ -42,16 +44,21 @@ def generate_floor():
         this_chunk_x, this_chunk_y = chunk_pos
 
         if (this_chunk_x + 1, this_chunk_y) in chunks:
-            doors[(this_chunk_x, this_chunk_y, 'right')] = random.randint(0, TM_CHUNK_SIZE - 2)
+            doors[(this_chunk_x, this_chunk_y, 'right')] = random.randint(1, TM_CHUNK_SIZE - 3)
 
         if (this_chunk_x, this_chunk_y + 1) in chunks:
-            doors[(this_chunk_x, this_chunk_y, 'down')] = random.randint(0, TM_CHUNK_SIZE - 2)
+            doors[(this_chunk_x, this_chunk_y, 'down')] = random.randint(1, TM_CHUNK_SIZE - 3)
 
-    return {'chunks': chunks, 'chunk-properties': chunk_properties, 'starting-chunk': random.choice(list(chunks)), 'doors': doors}
+    ret = {'chunks': chunks, 'chunk-properties': chunk_properties, 'doors': doors}
+    ret['starting-chunk'] = random.choice(list(chunks)) 
+    ret['spawn'] = (1, 1)
+    if chunk_properties[ret['starting-chunk']]['shape'] == 'outer-loop':
+        start_pos = chunk_properties[ret['starting-chunk']]['ring-start'] + 2
+        ret['spawn'] = (start_pos, start_pos)
+    return ret
 
 
 def generate_chunk(world, floor_data, chunk_properties):
-    print(chunk_properties)
     chunk_pos = chunk_properties['position']
     chunk_x, chunk_y = chunk_pos
     tile_map = TileMap(chunk_x, chunk_y)
@@ -98,6 +105,8 @@ def generate_chunk(world, floor_data, chunk_properties):
         world_x, world_y = world.chunk_coord_to_world_coord(chunk_pos, door_pos_h, door_y)
         world.add_entity_at(world_x, world_y, visible, 'door', 'door')
 
+        outer_ring_furnisher(world, chunk_properties, tile_map, start_pos, stop_pos)
+
     place_doors(world, tile_map, chunk_pos, floor_data)
     # Chop up vertically and horizontally to create irregular rooms
     recursive_room_chopper(world, tile_map, chunk_properties, floor_data, x, y, w, h, 1)
@@ -129,7 +138,7 @@ def recursive_room_chopper(world, tile_map, chunk_properties, floor_data, x, y, 
         done = True
 
     if done:
-        room_furnisher(world, chunk_properties, tile_map, x, y, w, h)
+        rectangle_room_furnisher(world, chunk_properties, tile_map, x, y, w, h)
         return
 
     chunk_pos = chunk_properties['position']
@@ -197,7 +206,7 @@ def recursive_room_chopper(world, tile_map, chunk_properties, floor_data, x, y, 
         cut_tries -= 1
         if cut_tries < 0:
             # couldn't get a valid cut in a few tries so we'll just not cut this room any further
-            room_furnisher(world, chunk_properties, tile_map, x, y, w, h)
+            rectangle_room_furnisher(world, chunk_properties, tile_map, x, y, w, h)
             return
         # End while not valid_cut
 
@@ -225,8 +234,143 @@ def recursive_room_chopper(world, tile_map, chunk_properties, floor_data, x, y, 
         recursive_room_chopper(world, tile_map, chunk_properties, floor_data, x, y, w, slice_position, depth + 1)
         recursive_room_chopper(world, tile_map, chunk_properties, floor_data, x, y + slice_position + 1, w, h - 1 - slice_position, depth + 1)
 
-def room_furnisher(world, chunk_properties, tile_map, x, y, w, h):
+def rectangle_room_furnisher(world, chunk_properties, tile_map, x, y, w, h):
+    all_tiles = set()
+
+    for i in range(x, x + w):
+        for j in range(y, y + h):
+            all_tiles.add((i, j))
+
     area = w * h
+    min_length = min(w, h)
+
+    if min_length > 6 and area > 84:
+        supports_chance = 80
+        if area > 100:
+            supports_chance = 95
+
+        if random.randint(1, 100) <= supports_chance:
+            # cut out some tiles in the middle like they are pillars supporting the ceiling
+            vertical = h > w
+
+            # wide pillars if room is even in width
+            long_s = (h if vertical else w)
+            short_s = (w if vertical else h)
+
+            center_wide = short_s % 2 == 0
+            middle = math.floor((short_s / 2) - .5)
+
+            divisions = max(2, math.ceil(long_s / 6))
+            spacing = long_s / divisions
+
+            def flipped(coord):
+                return (coord[1], coord[0])
+            def offset(coord):
+                return (coord[0] + x, coord[1] + y)
+
+            pillar_shape = random.choice(['square', '+', '-', 'H'])
+
+            for i in range(1, divisions):
+                pillar_coord = (middle, math.floor(spacing * i))
+                if not vertical:
+                    pillar_coord = flipped(pillar_coord)
+                removed_tiles = place_pillar(tile_map, offset(pillar_coord), pillar_shape, center_wide, vertical)
+                all_tiles -= removed_tiles
+
+    room_furnisher(world, chunk_properties, tile_map, all_tiles)
+
+def place_pillar(tile_map, position, shape, is_wide, wide_on_x):
+    cut_tiles = set()
+    start_x, start_y = position
+
+    def cut(x, y):
+        cut_tiles.add((x, y))
+        tile_map.clear_tile(x, y)
+
+    def cut_minus():
+        cut(start_x, start_y)
+        if wide_on_x:
+            cut(start_x - 1, start_y)
+            cut(start_x + 1, start_y)
+            if is_wide:
+                cut(start_x + 2, start_y)
+        else:
+            cut(start_x, start_y - 1)
+            cut(start_x, start_y + 1)
+            if is_wide:
+                cut(start_x, start_y + 2)
+
+    def cut_plus():
+        cut_minus()
+        if wide_on_x:
+            cut(start_x, start_y - 1)
+            cut(start_x, start_y + 1)
+            if is_wide:
+                cut(start_x + 1, start_y - 1)
+                cut(start_x + 1, start_y + 1)
+        else:
+            cut(start_x - 1, start_y)
+            cut(start_x + 1, start_y)
+            if is_wide:
+                cut(start_x - 1, start_y + 1)
+                cut(start_x + 1, start_y + 1)
+
+    def cut_corners():
+        cut(start_x - 1, start_y - 1)
+        two = 2 if is_wide else 1
+        if wide_on_x:
+            cut(start_x + two, start_y - 1)
+            cut(start_x + two, start_y + 1)
+            cut(start_x - 1, start_y + 1)
+        else:
+            cut(start_x - 1, start_y + two)
+            cut(start_x + 1, start_y + two)
+            cut(start_x + 1, start_y - 1)
+
+    def cut_square():
+        cut_plus()
+        cut_corners()
+
+    def cut_h():
+        cut_minus()
+        cut_corners()
+
+    if shape == '-':
+        cut_minus()
+    elif shape == '+':
+        cut_plus()
+    elif shape == 'square':
+        cut_square()
+    elif shape == 'H':
+        cut_h()
+
+    return cut_tiles
+
+
+def outer_ring_furnisher(world, chunk_properties, tile_map, ring_start, ring_stop):
+    all_tiles = set()
+
+    for i in range(0, TM_CHUNK_SIZE - 1):
+        for j in range(0, TM_CHUNK_SIZE - 1):
+            if i >= ring_start and i <= ring_stop and j >= ring_start and j <= ring_stop:
+                continue
+            all_tiles.add((i, j))
+
+    def cut(x, y):
+        all_tiles.remove((x, y))
+        tile_map.clear_tile(x, y)
+
+    cut_corner_chance = 60
+    if random.randint(1, 100) <= cut_corner_chance:
+        cut(0, 0)
+        cut(TM_CHUNK_SIZE - 2, 0)
+        cut(0, TM_CHUNK_SIZE - 2)
+        cut(TM_CHUNK_SIZE - 2, TM_CHUNK_SIZE - 2)
+
+    room_furnisher(world, chunk_properties, tile_map, all_tiles)
+
+def room_furnisher(world, chunk_properties, tile_map, all_tiles):
+    area = len(all_tiles)
     chunk_pos = chunk_properties['position']
 
     if area <= 12:
@@ -247,10 +391,7 @@ def room_furnisher(world, chunk_properties, tile_map, x, y, w, h):
 
     stuff_so_far = 0
 
-    unused_spots = []
-    for i in range(x, x + w):
-        for j in range(y, y + h):
-            unused_spots.append((i, j))
+    unused_spots = list(all_tiles)
 
     visible = GameSettings.debug_mode
 

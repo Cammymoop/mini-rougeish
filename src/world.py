@@ -12,6 +12,7 @@ from entity import Entity
 from tilemap import TileMap
 from sprite import BasicSprite
 from inventory import Item, Inventory, item_from_pickup
+from input_manager import InputManager
 
 from generation import generate_chunk, generate_floor
 
@@ -44,7 +45,8 @@ class GameWorld:
         else:
             generate_chunk(self, self.floor_data, self.floor_data['chunk-properties'][self.starting_chunk])
 
-        start_x, start_y = self.chunk_coord_to_world_coord(self.floor_data['starting-chunk'], 1, 1)
+        chunk_spawn_x, chunk_spawn_y = self.floor_data['spawn']
+        start_x, start_y = self.chunk_coord_to_world_coord(self.floor_data['starting-chunk'], chunk_spawn_x, chunk_spawn_y)
 
         self.clear_entities_at(start_x, start_y)
         self.player = Entity(self, start_x, start_y, True, 'creature', 'player')
@@ -74,11 +76,21 @@ class GameWorld:
 
         self.keyboard_focus = 'game'
 
+        self.input_manager = InputManager()
+
+        self.button_right = self.input_manager.make_button('right', [K_RIGHT, K_d], lambda: self.que_move(1, 0), True)
+        self.button_left  = self.input_manager.make_button('left', [K_LEFT, K_a], lambda: self.que_move(-1, 0), True)
+        self.button_up    = self.input_manager.make_button('up', [K_UP, K_w], lambda: self.que_move(0, -1), True)
+        self.button_down  = self.input_manager.make_button('down', [K_DOWN, K_s], lambda: self.que_move(0, 1), True)
+
         # Reveal the room where the player starts
         self.reveal(start_x, start_y)
 
     def update(self):
-        for event in pygame.event.get():
+        all_events = pygame.event.get()
+        self.input_manager.update(all_events, self.clock.get_time())
+
+        for event in all_events:
             if event.type == KEYDOWN:
                 if event.key == K_LEFTBRACKET:
                     GameSettings.debug_mode = not GameSettings.debug_mode
@@ -92,13 +104,17 @@ class GameWorld:
                     if event.key == K_ESCAPE:
                         return False
                     elif event.key == K_RIGHT or event.key == K_d:
-                        self.que_move(1, 0)
+                        #self.que_move(1, 0)
+                        pass
                     elif event.key == K_LEFT or event.key == K_a:
-                        self.que_move(-1, 0)
+                        #self.que_move(-1, 0)
+                        pass
                     elif event.key == K_DOWN or event.key == K_s:
-                        self.que_move(0, 1)
+                        #self.que_move(0, 1)
+                        pass
                     elif event.key == K_UP or event.key == K_w:
-                        self.que_move(0, -1)
+                        #self.que_move(0, -1)
+                        pass
                     elif event.key == K_SPACE:
                         if not self.animating:
                             self.time_advance()
@@ -184,7 +200,8 @@ class GameWorld:
         ex, ey = entity.get_grid_x_y()
         target_stuff = self.what_is_at(ex + xdelta, ey + ydelta)
         if not target_stuff['tile']:
-            return False
+            if not GameSettings.debug_mode or entity != self.player:
+                return False
 
         targetable_types = ['creature', 'bustable']
 
