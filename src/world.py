@@ -173,6 +173,12 @@ class GameWorld:
         if not target_stuff['tile']:
             return False
 
+        # Dont let anyone but the player open doors
+        if entity.subtype != 'player':
+            for e in target_stuff['entities']:
+                if e.entity_type == 'door' and e.closed:
+                    return False
+
         return True
 
     def attempt_move(self, entity, xdelta, ydelta):
@@ -184,8 +190,11 @@ class GameWorld:
         targetable_types = ['creature', 'bustable']
 
         for e in target_stuff['entities']:
-            if e.entity_type == 'door' and self.player == entity:
-                e.visible = False # A bit hacky, I want to reveal after move completes, but hide the door when move starts
+            if e.entity_type == 'door' and e.closed:
+                if self.player == entity:
+                    e.visible = False # A bit hacky, I want to reveal after move completes, but hide the door when move starts
+                else:
+                    return False # Other creatures cant open doors
             if e.entity_type not in targetable_types:
                 continue
 
@@ -278,6 +287,8 @@ class GameWorld:
                         self.pathfinding_map[pf_x][pf_y] = max(3, self.pathfinding_map[pf_x][pf_y])
                     if entity.entity_type == 'creature':
                         self.pathfinding_map[pf_x][pf_y] = max(5, self.pathfinding_map[pf_x][pf_y])
+                    if entity.entity_type == 'door' and entity.closed:
+                        self.pathfinding_map[pf_x][pf_y] = max(6, self.pathfinding_map[pf_x][pf_y])
 
                 if self.pathfinding_map[pf_x][pf_y] == 0:
                     count_nodes += 1

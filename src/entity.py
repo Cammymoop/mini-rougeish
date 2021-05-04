@@ -172,6 +172,8 @@ class Entity(BasicSprite):
         if not self.moves or not self.living:
             return
 
+        # Sleep if too far offscreen
+        # Wake if sleeping and close to onscreen
         if not self.active:
             if not self.far_offscreen():
                 self.wake()
@@ -187,8 +189,6 @@ class Entity(BasicSprite):
                 return
 
             if self.movement_pattern == 'chase':
-                if self.far_offscreen():
-                    print('offscreen as I suspected')
                 deltas = self.pathfind_follow_player()
             elif self.movement_pattern == 'naive':
                 deltas = self.simple_follow_player()
