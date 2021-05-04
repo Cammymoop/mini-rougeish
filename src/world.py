@@ -37,14 +37,16 @@ class GameWorld:
         self.ui_group = OffsetGroup()
 
         self.floor_data = generate_floor()
-        if GameSettings.enable_fps:
+        if GameSettings.debug_mode:
             for chunk in self.floor_data['chunks']:
-                generate_chunk(self, self.floor_data, chunk))
+                generate_chunk(self, self.floor_data, chunk)
         else:
-            generate_chunk(self, self.floor_data, self.floor_data['starting_chunk']))
+            generate_chunk(self, self.floor_data, self.floor_data['starting-chunk'])
 
-        self.clear_entities_at(0, 0)
-        self.player = Entity(self, 0, 0, True, 'creature', 'player')
+        start_x, start_y = self.chunk_coord_to_world_coord(self.floor_data['starting-chunk'], 0, 0)
+
+        self.clear_entities_at(start_x, start_y)
+        self.player = Entity(self, start_x, start_y, True, 'creature', 'player')
         self.entity_group.add(self.player)
 
         blip_x = 270 - 8
@@ -72,11 +74,15 @@ class GameWorld:
         self.keyboard_focus = 'game'
 
         # Reveal the room where the player starts
-        self.reveal(0, 0)
+        self.reveal(start_x, start_y)
 
     def update(self):
         for event in pygame.event.get():
             if event.type == KEYDOWN:
+                if event.key == K_p:
+                    GameSettings.enable_fps = not GameSettings.enable_fps
+                if event.key == K_LEFTBRACKET:
+                    GameSettings.debug_mode = not GameSettings.debug_mode
                 if event.key == K_p:
                     GameSettings.enable_fps = not GameSettings.enable_fps
                 elif event.key == K_r:
@@ -429,8 +435,13 @@ class GameWorld:
                         if (nx, ny) in checked or (nx, ny) in to_check:
                             continue
 
+                        #is_new_chunk = self.pending_chunk_exists_at(nx, ny)
+                        #if is_new_chunk:
+                            #_, _, chunk_x, chunk_y = self.translate_chunk_coords(nx, ny)
+                            #generate_chunk(self, self.floor_data, (chunk_x, chunk_y))
+
                         stuff = self.what_is_at(nx, ny)
-                        # Skip 
+
                         if not stuff['tile'] or stuff['tile'].visible:
                             continue
 
@@ -461,9 +472,19 @@ class GameWorld:
             return False
         return True
 
+    def pending_chunk_exists(self, chunk_x, chunk_y):
+        if not self.chunk_exists(chunk_x, chunk_y):
+            if (chunk_x, chunk_y) in self.floor_data['chunks']:
+                return True
+        return False
+
     def chunk_exists_at(self, x, y):
         _, _, cx, cy = self.translate_chunk_coords(x, y)
         return self.chunk_exists(cx, cy)
+
+    def pending_chunk_exists_at(self, x, y):
+        _, _, cx, cy = self.translate_chunk_coords(x, y)
+        return self.pending_chunk_exists(cx, cy)
 
     # translate world x, y -> in_chunk_x, in_chunk_y, chunk_x, chunk_y
     def translate_chunk_coords(self, x, y):
@@ -502,6 +523,8 @@ class GameWorld:
         self.ui_group.render(ui_camera, surface)
 
     def add_chunk(self, chunk_x, chunk_y, chunk):
+        if chunk_y not in self.maps:
+            self.maps[chunk_y] = {}
         self.maps[chunk_y][chunk_x] = chunk
         self.update_render_list()
 

@@ -4,7 +4,7 @@ from offset import OffsetGroup
 from sprite import BasicSprite
 
 class TileMap:
-    def __init__(self):
+    def __init__(self, chunk_x = 0, chunk_y = 0):
         #self.chunks = {}
 
         self.tiles = {}
@@ -13,6 +13,8 @@ class TileMap:
 
         #display is currently 200x150
         offset_x, offset_y = get_screen_center_offset()
+        offset_x -= chunk_x * TM_CHUNK_SIZE * GRID_WIDTH
+        offset_y -= chunk_y * TM_CHUNK_SIZE * GRID_WIDTH
         self.set_origin(offset_x, offset_y)
 
     def set_origin(self, x, y):

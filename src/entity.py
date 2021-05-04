@@ -34,8 +34,8 @@ class Entity(BasicSprite):
             creature_spec = {}
             with open('data/creatures.yaml') as creature_data:
                 creature_spec = yaml.load(creature_data)[subtype]
-            if GameSettings.enable_fps:
-                print(creature_spec)
+            #if GameSettings.debug_mode:
+                #print(creature_spec)
             self.img_name = creature_spec['image'] if 'image' in creature_spec else 'no_img'
 
         # Figure out which layer to use
