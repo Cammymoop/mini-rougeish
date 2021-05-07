@@ -52,7 +52,8 @@ class GameWorld:
         self.player = Entity(self, start_x, start_y, True, 'creature', 'player')
         self.entity_group.add(self.player)
 
-        blip_x = 270 - 8
+        scr_width = get_internal_res()[0]
+        blip_x = scr_width - 8
         blip_y = 8 + ((self.player.hp-1) * 5)
         self.health_blips = []
         for i in range(self.player.hp):
@@ -83,8 +84,15 @@ class GameWorld:
         self.button_up    = self.input_manager.make_button('up', [K_UP, K_w], lambda: self.que_move(0, -1), True)
         self.button_down  = self.input_manager.make_button('down', [K_DOWN, K_s], lambda: self.que_move(0, 1), True)
 
+        self.button_menu  = self.input_manager.make_button('menu', [K_RETURN, K_e], self.inventory_toggle)
+
+        #self.inv_display = InventoryMenu(self.ui_group)
+
         # Reveal the room where the player starts
         self.reveal(start_x, start_y)
+
+    def inventory_toggle(self):
+        pass
 
     def update(self):
         all_events = pygame.event.get()

@@ -9,8 +9,6 @@ PATHFINDING_HEIGHT = 80
 PATHFINDING_CENTER_DEADZONE = 20
 
 
-FLOOR_VARIANTS = 2
-
 class GameSettings:
     game_scale = 1
 

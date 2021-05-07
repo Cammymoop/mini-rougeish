@@ -3,6 +3,7 @@
 class Inventory():
     def __init__(self):
         self.items = {}
+        self.size = 9
 
     def add_item(self, item):
         if item.item_type not in self.items:
