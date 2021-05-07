@@ -72,9 +72,7 @@ def generate_chunk(world, floor_data, chunk_properties):
 
     visible = GameSettings.debug_mode
 
-    floor_prefix = ''
-    if chunk_properties['color'] != 'classic':
-        floor_prefix = chunk_properties['color'] + '_'
+    floor_prefix = chunk_properties['color'] + '_'
     floor_variants = 2
 
     def floor_tile_img():
@@ -451,16 +449,27 @@ def room_furnisher(world, chunk_properties, tile_map, all_tiles):
         if stuff_so_far >= max_things:
             return
 
-    # 50% chance of slightly cracked floor
-    # 25% chance of very cracked floor
-    cracks_count = 0
-    if random.randint(1, 2) == 2:
-        cracks_count = area // 10
-    elif random.randint(1, 2) == 2:
-        cracks_count = area // 5
-
+    floor_prefix = chunk_properties['color'] + '_'
+    rare_variants = 0
     if chunk_properties['color'] == 'classic':
-        crack_variants = 2
+        rare_variants = 2
+    if chunk_properties['color'] == 'rock':
+        rare_variants = 1
+
+    def rare_tile_img():
+        if rare_variants < 2:
+            return floor_prefix + 'floor3'
+        return floor_prefix + 'floor' + str(random.randint(1, rare_variants) + 2)
+
+    if rare_variants > 0:
+        # 50% chance of a few rare variants
+        # 25% chance of a lot of rare variants
+        cracks_count = 0
+        if random.randint(1, 2) == 2:
+            cracks_count = area // 10
+        elif random.randint(1, 2) == 2:
+            cracks_count = area // 5
+
         for i in range(cracks_count):
             if len(unused_spots) < 1:
                 break
@@ -469,7 +478,7 @@ def room_furnisher(world, chunk_properties, tile_map, all_tiles):
             spot_x, spot_y = spot
 
             tile_map.clear_tile(spot_x, spot_y)
-            tile_map.place_tile(spot_x, spot_y, visible, 'floor_crack' + str(random.randint(1, crack_variants)))
+            tile_map.place_tile(spot_x, spot_y, visible, rare_tile_img())
 
 # Place inter-chunk tiles and doors
 # do it before chopping rooms so they can avoid chopping right next to the doors
@@ -477,9 +486,7 @@ def place_doors(world, tile_map, chunk_pos, chunk_properties, floor_data):
     chunk_x, chunk_y = chunk_pos
     visible = GameSettings.debug_mode
 
-    floor_prefix = ''
-    if chunk_properties['color'] != 'classic':
-        floor_prefix = chunk_properties['color'] + '_'
+    floor_prefix = chunk_properties['color'] + '_'
     floor_variants = 2
 
     def floor_tile_img():
