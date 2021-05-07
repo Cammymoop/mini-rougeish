@@ -5,9 +5,12 @@ class Inventory():
         self.items = {}
         self.size = 9
 
+        self.sorted = []
+
     def add_item(self, item):
         if item.item_type not in self.items:
             self.items[item.item_type] = item
+            self.sorted.append(item.item_type)
         else:
             self.items[item.item_type].quantity += item.quantity
 

@@ -12,6 +12,7 @@ from entity import Entity
 from tilemap import TileMap
 from sprite import BasicSprite
 from inventory import Item, Inventory, item_from_pickup
+from inventory_menu import InventoryMenu
 from input_manager import InputManager
 
 from generation import generate_chunk, generate_floor
@@ -78,25 +79,48 @@ class GameWorld:
         self.keyboard_focus = 'game'
 
         self.input_manager = InputManager()
+        self.input_manager.focus('game')
 
-        self.button_right = self.input_manager.make_button('right', [K_RIGHT, K_d], lambda: self.que_move(1, 0), True)
-        self.button_left  = self.input_manager.make_button('left', [K_LEFT, K_a], lambda: self.que_move(-1, 0), True)
-        self.button_up    = self.input_manager.make_button('up', [K_UP, K_w], lambda: self.que_move(0, -1), True)
-        self.button_down  = self.input_manager.make_button('down', [K_DOWN, K_s], lambda: self.que_move(0, 1), True)
+        self.button_right = self.input_manager.make_button('right', 'game', [K_RIGHT, K_d], lambda: self.que_move(1, 0), True)
+        self.button_left  = self.input_manager.make_button('left', 'game', [K_LEFT, K_a], lambda: self.que_move(-1, 0), True)
+        self.button_up    = self.input_manager.make_button('up', 'game', [K_UP, K_w], lambda: self.que_move(0, -1), True)
+        self.button_down  = self.input_manager.make_button('down', 'game', [K_DOWN, K_s], lambda: self.que_move(0, 1), True)
 
-        self.button_menu  = self.input_manager.make_button('menu', [K_RETURN, K_e], self.inventory_toggle)
+        self.exit_next = False
+        def c_exit():
+            self.exit_next = True
+        self.button_exit  = self.input_manager.make_button('exit', 'game', [K_ESCAPE], c_exit)
+        self.reset_next = False
+        def c_reset():
+            self.reset_next = True
+        self.button_exit  = self.input_manager.make_button('reset', False, [K_r], c_reset)
 
-        #self.inv_display = InventoryMenu(self.ui_group)
+        self.button_menu  = self.input_manager.make_button('menu', False, [K_RETURN, K_e], self.inventory_toggle)
+
+        self.inv_display = InventoryMenu(self.input_manager, self.ui_group, self.player.inventory)
+        self.inv_display.hide()
 
         # Reveal the room where the player starts
         self.reveal(start_x, start_y)
 
     def inventory_toggle(self):
-        pass
+        if self.inv_display.visible:
+            self.inv_display.hide()
+            self.input_manager.focus('game')
+        else:
+            self.inv_display.show()
+            self.input_manager.focus('inventory')
+
 
     def update(self):
         all_events = pygame.event.get()
         self.input_manager.update(all_events, self.clock.get_time())
+
+        if self.exit_next:
+            return False
+        if self.reset_next:
+            self.restart = True
+            return False
 
         for event in all_events:
             if event.type == KEYDOWN:
@@ -104,26 +128,9 @@ class GameWorld:
                     GameSettings.debug_mode = not GameSettings.debug_mode
                 elif event.key == K_p:
                     GameSettings.enable_fps = not GameSettings.enable_fps
-                elif event.key == K_r:
-                    self.restart = True
-                    return False
 
                 if self.keyboard_focus == 'game':
-                    if event.key == K_ESCAPE:
-                        return False
-                    elif event.key == K_RIGHT or event.key == K_d:
-                        #self.que_move(1, 0)
-                        pass
-                    elif event.key == K_LEFT or event.key == K_a:
-                        #self.que_move(-1, 0)
-                        pass
-                    elif event.key == K_DOWN or event.key == K_s:
-                        #self.que_move(0, 1)
-                        pass
-                    elif event.key == K_UP or event.key == K_w:
-                        #self.que_move(0, -1)
-                        pass
-                    elif event.key == K_SPACE:
+                    if event.key == K_SPACE:
                         if not self.animating:
                             self.time_advance()
                             self.animating = True

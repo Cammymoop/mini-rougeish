@@ -23,6 +23,9 @@ class GameSettings:
 def get_internal_res():
     return (GameSettings.internal_w * GameSettings.game_scale, GameSettings.internal_h * GameSettings.game_scale)
 
+def get_screen_center():
+    return ((GameSettings.internal_w * GameSettings.game_scale) // 2, (GameSettings.internal_h * GameSettings.game_scale) // 2)
+
 def get_real_res():
     return (GameSettings.internal_w * GameSettings.scaler, GameSettings.internal_h * GameSettings.scaler)
 
