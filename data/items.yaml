@@ -1,0 +1,13 @@
+
+moni:
+    stackable: True
+heal_potion:
+    stackable: True
+    usage: consumable
+    effects:
+        - 'health +4'
+red_axe:
+    stackable: False
+    usage: equip
+    effects:
+        - 'damage +2'

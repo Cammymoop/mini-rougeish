@@ -2,6 +2,7 @@ from pygame.locals import *
 
 from constants import *
 from sprite import BasicSprite
+from text import MonoFont, MonoText
 
 class InventoryMenu:
     def __init__(self, input_manager, sprite_group, inventory):
@@ -17,17 +18,20 @@ class InventoryMenu:
         self.cursor_sprite = BasicSprite('inv_cursor', True, 5)
         self.sprite_group.add(self.cursor_sprite)
 
+        self.font = MonoFont('0123456789', 'outline_numbers', 6, 9)
+
         self.cursor_enabled = True
 
         self.refresh_display()
         self.visible = True
 
-        self.button_right = self.input_manager.make_button('right', 'inventory', [K_RIGHT, K_d], lambda: self.move_cursor(1, 0))
-        self.button_left  = self.input_manager.make_button('left', 'inventory', [K_LEFT, K_a], lambda: self.move_cursor(-1, 0))
-        self.button_up    = self.input_manager.make_button('up', 'inventory', [K_UP, K_w], lambda: self.move_cursor(0, -1))
-        self.button_down  = self.input_manager.make_button('down', 'inventory', [K_DOWN, K_s], lambda: self.move_cursor(0, 1))
+        self.button_right = self.input_manager.make_button('inv-right', 'inventory', [K_RIGHT, K_d], lambda: self.move_cursor(1, 0))
+        self.button_left  = self.input_manager.make_button('inv-left', 'inventory', [K_LEFT, K_a], lambda: self.move_cursor(-1, 0))
+        self.button_up    = self.input_manager.make_button('inv-up', 'inventory', [K_UP, K_w], lambda: self.move_cursor(0, -1))
+        self.button_down  = self.input_manager.make_button('inv-down', 'inventory', [K_DOWN, K_s], lambda: self.move_cursor(0, 1))
 
-        self.button_exit  = self.input_manager.make_button('exit', 'inventory', [K_ESCAPE], lambda: self.hide())
+        self.button_select = self.input_manager.make_button('inv-select', 'inventory', [K_SPACE], lambda: self.hide())
+        self.button_exit   = self.input_manager.make_button('inv-exit', 'inventory', [K_ESCAPE], lambda: self.hide())
 
     def clear_sprites(self):
         for s in self.sprites:
@@ -61,11 +65,20 @@ class InventoryMenu:
         for index, item_name in enumerate(self.inventory.sorted):
             item = self.inventory.items[item_name]
             spr = BasicSprite(item.icon, True, 1)
-            spr.set_pos(slot_positions[index][0], slot_positions[index][1])
+
+            pos_x, pos_y = slot_positions[index]
+            spr.set_pos(pos_x, pos_y)
             self.sprites.append(spr)
             self.sprite_group.add(spr)
 
-        self.cursor_sprite.set_pos(slot_positions[0][0], slot_positions[0][1])
+            if item.quantity > 1:
+                text = MonoText(6, self.font, str(item.quantity), 'right')
+                text.set_tr_pos(pos_x + 9, pos_y + 1)
+                self.sprites.append(text)
+                self.sprite_group.add(text)
+
+        cursor_x, cursor_y = slot_positions[self.cursor_index]
+        self.cursor_sprite.set_pos(cursor_x, cursor_y)
         if len(self.inventory.items) > 0:
             self.cursor_enabled = True
         else:

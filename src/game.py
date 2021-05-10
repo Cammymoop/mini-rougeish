@@ -7,6 +7,7 @@ import math
 from offset import OffsetGroup
 from sprite import BasicSprite
 from world import GameWorld
+from text import MonoFont, MonoText
 
 from pygame.locals import *
 from constants import *
@@ -54,11 +55,14 @@ def main(real_screen):
 
     camera_follow = world.get_player()
 
-    debug_font = pygame_freetype.Font(None)
+    #debug_font = pygame_freetype.Font(None)
     #debug_font.antialiased = False
-    debug_font.fgcolor = (181, 235, 181, 255)
-    debug_font.size = 11
-    debug_text_rect = pygame.Rect(4, 4, 10, 10)
+    #debug_font.fgcolor = (181, 235, 181, 255)
+    #debug_font.size = 11
+    #debug_text_rect = pygame.Rect(4, 34, 10, 10)
+
+    debug_font_pixel = MonoFont('0123456789', 'outline_numbers', 6, 9, 0)
+    debug_text_pixel = MonoText(1, debug_font_pixel, '00')
 
     render_list = []
     render_list.append(world)
@@ -82,8 +86,10 @@ def main(real_screen):
             render_obj.render(camera, screen)
 
         if GameSettings.enable_fps:
-            fps = str(round(clock.get_fps()))
-            debug_font.render_to(screen, debug_text_rect, fps)
+            fps = str(math.floor(clock.get_fps()))
+            #debug_font.render_to(screen, debug_text_rect, fps)
+            debug_text_pixel.set_text(fps)
+            screen.blit(debug_text_pixel.image, (4, 4))
 
         real_screen.blit(pygame.transform.scale(screen, get_real_res()), (0, 0))
         pygame.display.flip()

@@ -1,6 +1,6 @@
 
 
-class Inventory():
+class Inventory:
     def __init__(self):
         self.items = {}
         self.size = 9
@@ -14,11 +14,12 @@ class Inventory():
         else:
             self.items[item.item_type].quantity += item.quantity
 
-class Item():
+class Item:
     def __init__(self, item_type='generic', quantity=1, icon='no_img'):
         self.item_type = item_type
         self.quantity = quantity
         self.icon = icon
+        self.equipped = False
 
 def item_from_pickup(pickup):
     item = Item(pickup.subtype, 1, pickup.img_name)
