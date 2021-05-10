@@ -1,6 +1,6 @@
 import pygame
 import math
-import yaml
+from lib import yaml
 import random
 
 from constants import *
