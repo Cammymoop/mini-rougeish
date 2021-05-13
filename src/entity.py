@@ -1,6 +1,10 @@
 import pygame
 import math
-from lib import yaml
+
+import os
+import sys
+sys.path.append(os.path.abspath('lib'))
+import yaml
 import random
 
 from constants import *
@@ -18,6 +22,18 @@ def int_tween(from_v, to_v, progress):
     diff = to_v - from_v
     return from_v + round(diff * progress)
 
+with open('data/loot_sets.yaml') as loot_sets_data:
+    s_loot_sets = yaml.safe_load(loot_sets_data)
+with open('data/creatures.yaml') as creature_data:
+    s_creature_specs = yaml.safe_load(creature_data)
+
+def random_loot_from_set(loot_set_name, quantity):
+    weights = []
+    loot_set = s_loot_sets[loot_set_name]
+    for l in loot_set:
+        weights.append(l['weight'])
+    return random.choices(loot_set, weights=weights, k=quantity)
+
 class Entity(BasicSprite):
     bump_constant = 5
     bump_progress_multiplier = 2.0
@@ -33,9 +49,10 @@ class Entity(BasicSprite):
         elif ent_type == 'door':
             self.img_name = 'door'
         elif ent_type == 'creature':
-            creature_spec = {}
-            with open('data/creatures.yaml') as creature_data:
-                creature_spec = yaml.safe_load(creature_data)[subtype]
+            if subtype not in s_creature_specs:
+                print("Creature of subtype " + str(subtype) + " not found")
+                subtype = 'goon'
+            creature_spec = s_creature_specs[subtype]
             #if GameSettings.debug_mode:
                 #print(creature_spec)
             self.img_name = creature_spec['image'] if 'image' in creature_spec else 'no_img'
@@ -64,10 +81,14 @@ class Entity(BasicSprite):
 
         self.moves = False
         self.animates = False
+        self.loot = []
 
         # Special defaults
         if ent_type == 'bustable':
-            self.drops = [{'type': 'pickup', 'subtype': 'moni'}]
+            if subtype == 'chest':
+                self.loot = [{'set': 'chest', 'quantity': 1}]
+            else:
+                self.loot = [{'set': 'pot', 'quantity': 1}]
         elif ent_type == 'creature':
             self.moves = True
             self.animates = True
@@ -82,7 +103,7 @@ class Entity(BasicSprite):
 
         if ent_type == 'creature':
             if 'loot' in creature_spec:
-                self.drops = creature_spec['loot']
+                self.loot = creature_spec['loot']
             if 'attributes' in creature_spec:
                 for attr, val in creature_spec['attributes'].items():
                     setattr(self, attr, val)
@@ -154,9 +175,13 @@ class Entity(BasicSprite):
         if self.moves:
             self.active = False
 
-        if enable_drops and hasattr(self, 'drops'):
-            for drop in self.drops:
-                self.world.add_entity_at(self.grid_x, self.grid_y, self.visible, drop['type'], drop['subtype'])
+        if enable_drops:
+            for drop_from in self.loot:
+                drops = random_loot_from_set(drop_from['set'], drop_from['quantity'])
+                for drop in drops:
+                    entity = self.world.add_entity_at(self.grid_x, self.grid_y, self.visible, drop['type'], drop['subtype'])
+                    if 'amount' in drop:
+                        entity.quantity = drop['amount']
 
     def sleep(self):
         self.visible = False

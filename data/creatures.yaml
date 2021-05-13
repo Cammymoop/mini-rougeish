@@ -13,7 +13,7 @@ goon:
         base_attack: 1
         movement_pattern: naive
     loot:
-        - {type: pickup, subtype: moni}
+        - {set: small_enemy, quantity: 1}
 big_cubeo:
     image: big_cubeo
     attributes:
@@ -22,7 +22,7 @@ big_cubeo:
         movement_pattern: random
         move_wait: 1
     loot:
-        - {type: pickup, subtype: moni}
+        - {set: small_enemy, quantity: 2}
 cubeo:
     image: cubeo
     attributes:
@@ -31,7 +31,7 @@ cubeo:
         movement_pattern: random
         move_wait: 1
     loot:
-        - {type: pickup, subtype: moni}
+        - {set: small_enemy, quantity: 1}
 eyepod:
     image: eyepod_hi
     attributes:
@@ -42,6 +42,4 @@ eyepod:
         no_wait_on_hit: true
         paths: true
     loot:
-        - {type: pickup, subtype: moni_pile}
-
-# Should make a loot.yaml with loot pools that stuff can drop loot from maybe
+        - {set: rare_enemy, quantity: 1}

@@ -497,7 +497,7 @@ class GameWorld:
 
                         is_new_chunk = self.pending_chunk_exists_at(nx, ny)
                         if is_new_chunk:
-                            print('revealing new chunk')
+                            #print('revealing new chunk')
                             _, _, chunk_x, chunk_y = self.translate_chunk_coords(nx, ny)
                             generate_chunk(self, self.floor_data, self.floor_data['chunk-properties'][(chunk_x, chunk_y)])
 

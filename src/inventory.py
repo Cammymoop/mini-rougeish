@@ -22,9 +22,15 @@ class Item:
         self.equipped = False
 
 def item_from_pickup(pickup):
-    item = Item(pickup.subtype, 1, pickup.img_name)
-    if hasattr(pickup, 'quantity'):
-        item.quantity = pickup.quantity
+    img_name = pickup.img_name
+    subtype = pickup.subtype
+    if pickup.subtype == 'moni_pile':
+        subtype = 'moni'
+        img_name = 'moni'
 
-    return item
+    quantity = 1
+    if hasattr(pickup, 'quantity'):
+        quantity = pickup.quantity
+
+    return Item(subtype, quantity, subtype)
 
