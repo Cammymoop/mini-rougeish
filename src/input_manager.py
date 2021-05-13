@@ -12,6 +12,10 @@ class InputManager:
     def focus(self, new_focus):
         self.input_focus = new_focus
 
+        # Any currently held keys are cleared
+        # so if you push a key and the focus changes, the new focus doesn't detect that press until it gets another keydown event
+        self.down_keys = set()
+
     def track_key(self, key):
         self.tracked_keys.add(key)
 

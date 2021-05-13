@@ -149,11 +149,11 @@ class GameWorld:
                 self.animating = False 
                 self.current_anim_time = 0
                 for entity in self.entity_group.sprites():
-                    if entity.animates and entity.active:
-                        entity.no_anim()
-
                     if self.player == entity:
                         self.after_player_move()
+
+                    if entity.animates and entity.active:
+                        entity.reset_turn_anim()
 
         if not self.animating and len(self.move_que) > 0:
             self.handle_move_que()
@@ -253,6 +253,7 @@ class GameWorld:
                 e.visible = False
                 self.reveal(px, py)
             elif e.entity_type == 'pickup':
+                print('pickup')
                 pickup_item = item_from_pickup(e)
                 if pickup_item:
                     self.player.inventory.add_item(pickup_item)

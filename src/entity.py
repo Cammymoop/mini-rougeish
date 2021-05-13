@@ -11,6 +11,13 @@ from constants import *
 from sprite import BasicSprite
 from inventory import Inventory
 
+# Keep static data loaded from yaml files
+with open('data/loot_sets.yaml') as loot_sets_data:
+    s_loot_sets = yaml.safe_load(loot_sets_data)
+with open('data/creatures.yaml') as creature_data:
+    s_creature_specs = yaml.safe_load(creature_data)
+
+
 def int_bounce_tween(from_v, to_v, progress):
     # double the distance because I'm making progress go 0 -> .5 -> 0
     diff = (to_v - from_v) * 2
@@ -21,11 +28,6 @@ def int_bounce_tween(from_v, to_v, progress):
 def int_tween(from_v, to_v, progress):
     diff = to_v - from_v
     return from_v + round(diff * progress)
-
-with open('data/loot_sets.yaml') as loot_sets_data:
-    s_loot_sets = yaml.safe_load(loot_sets_data)
-with open('data/creatures.yaml') as creature_data:
-    s_creature_specs = yaml.safe_load(creature_data)
 
 def random_loot_from_set(loot_set_name, quantity):
     weights = []
@@ -109,7 +111,9 @@ class Entity(BasicSprite):
                     setattr(self, attr, val)
 
         # Automatic attributes
+        self.max_hp = self.hp
         if self.moves:
+            self.just_moved = False
             self.active = not self.hidden
             self.wait_counter = self.move_wait
             self.prefer_horizontal = True
@@ -128,7 +132,7 @@ class Entity(BasicSprite):
             self.non_move_animation = False
 
         if self.has_inventory:
-            self.inventory = Inventory()
+            self.inventory = Inventory(self)
 
     def get_grid_x_y(self):
         return self.grid_x, self.grid_y
@@ -143,6 +147,19 @@ class Entity(BasicSprite):
             self.set_pos(x * GRID_WIDTH, y * GRID_WIDTH)
         else:
             self.animate_to(x * GRID_WIDTH, y * GRID_WIDTH, False)
+        self.just_moved = True
+
+    ##############################
+    # Inventory, Items
+    def drop_item(self, item):
+        entity = self.world.add_entity_at(self.grid_x, self.grid_y, self.visible, 'pickup', item.item_type)
+        entity.quantity = item.quantity
+
+    def equipment_update(self):
+        if not self.has_inventory:
+            return
+    # Inventory, Items
+    ##############################
 
     ##############################
     # Combat, AI, Visibility etc
@@ -162,6 +179,21 @@ class Entity(BasicSprite):
         if self.entity_type == 'creature' and self.subtype == 'player':
             self.world.player_stat_change()
             self.world.do_camera_shake(0.2)
+
+    def instant_effect(self, effect):
+        effect_name, effect_properties = effect.split(' ')
+        if effect_name == "health":
+            amount = int(effect_properties)
+            if amount < 0:
+                self.take_damage({'amount': amount})
+            else:
+                self.heal(amount)
+
+    def heal(self, amount):
+        self.hp = min(self.max_hp, self.hp + amount)
+
+        if self.entity_type == 'creature' and self.subtype == 'player':
+            self.world.player_stat_change()
 
     def reveal(self):
         self.hidden = False
@@ -321,13 +353,14 @@ class Entity(BasicSprite):
             self.change_look(ox-x > 0)
         self.non_move_animation = False
 
-    def no_anim(self):
+    def reset_turn_anim(self):
         ox, oy = self.get_pos()
         self.origin_pos_x = ox
         self.origin_pos_y = oy
         self.target_pos_x = ox
         self.target_pos_y = oy
         self.non_move_animation = False
+        self.just_moved = False
     
     def bump_animation(self, dx, dy):
         px, py = self.get_pos()

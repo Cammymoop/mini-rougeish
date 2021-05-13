@@ -30,8 +30,13 @@ class InventoryMenu:
         self.button_up    = self.input_manager.make_button('inv-up', 'inventory', [K_UP, K_w], lambda: self.move_cursor(0, -1))
         self.button_down  = self.input_manager.make_button('inv-down', 'inventory', [K_DOWN, K_s], lambda: self.move_cursor(0, 1))
 
-        self.button_select = self.input_manager.make_button('inv-select', 'inventory', [K_SPACE], lambda: self.hide())
-        self.button_exit   = self.input_manager.make_button('inv-exit', 'inventory', [K_ESCAPE], lambda: self.hide())
+        self.button_select = self.input_manager.make_button('inv-select', 'inventory', [K_SPACE], self.select)
+        self.button_exit   = self.input_manager.make_button('inv-exit', 'inventory', [K_ESCAPE], self.hide)
+
+    def select(self):
+        if len(self.inventory.items) > self.cursor_index:
+            self.inventory.use_item(self.cursor_index)
+        self.hide()
 
     def clear_sprites(self):
         for s in self.sprites:
@@ -62,8 +67,8 @@ class InventoryMenu:
             self.sprites.append(spr)
             self.sprite_group.add(spr)
 
-        for index, item_name in enumerate(self.inventory.sorted):
-            item = self.inventory.items[item_name]
+        for index in range(len(self.inventory.items)):
+            item = self.inventory.items[index]
             spr = BasicSprite(item.icon, True, 1)
 
             pos_x, pos_y = slot_positions[index]
