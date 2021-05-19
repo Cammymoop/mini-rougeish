@@ -2,14 +2,18 @@ import time
 
 32_bit = 2**32
 
+###############################################################################################
+# algorithm from Squirrel Eiserloh's 2017 GDC talk: Math for Game Programmers: Noise-Based RNG
 # squirrel3 noise constants
-NOISE1 = 0xb5297a4d  # 0b0110'1000'1110'0011'0001'1101'1010'0100
-NOISE2 = 0x68e31da4  # 0b1011'0101'0010'1001'0111'1010'0100'1101
-NOISE3 = 0x1b56c4e9  # 0b0001'1011'0101'0110'1100'0100'1110'1001
+NOISE1 = 0xb5297a4d
+NOISE2 = 0x68e31da4
+NOISE3 = 0x1b56c4e9
 
 def timeseed():
     return time.time() % 32_bit
 
+# might not get same results when not reducing to 32-bit int at each step
+# something to check I guess, should make one that does and compare some outputs for big inputs (just generate some)
 def squirrel3_seeded_hash(n, seed):
     n *= NOISE1
     n += seed
@@ -22,6 +26,7 @@ def squirrel3_seeded_hash(n, seed):
     # squirrel3 is a 32 bit algorithm
     # this gets the right result but isn't the fastest, should be more than fast enough for me
     return n % 32_bit
+###############################################################################################
 
 # these noise funcitons take an integer position
 def get_seeded_noise(position, seed):
