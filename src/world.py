@@ -56,6 +56,7 @@ class GameWorld:
 
         # keep track when the player moves into a new half-chunk grid for rendering purposes
         self.cur_half_chunk_coords = self.get_p_half_chunk_coords()
+        self.update_render_list()
 
         scr_width = get_internal_res()[0]
         blip_x = scr_width - 8
@@ -106,7 +107,8 @@ class GameWorld:
         self.inv_display.hide()
 
         # Reveal the room where the player starts
-        self.reveal(start_x, start_y)
+        self.revealing = False
+        self.revealing = self.reveal(start_x, start_y)
 
     def inventory_toggle(self):
         if self.inv_display.visible:
@@ -126,6 +128,12 @@ class GameWorld:
         if self.reset_next:
             self.restart = True
             return False
+
+        if self.revealing:
+            try:
+                next(self.revealing)
+            except StopIteration as s:
+                self.revealing = False
 
         for event in all_events:
             if event.type == KEYDOWN:
@@ -257,7 +265,10 @@ class GameWorld:
             if e.entity_type == 'door':
                 e.closed = False
                 e.visible = False
-                self.reveal(px, py)
+                if self.revealing:
+                    print("Trying to reveal while one reveal is still active!")
+                else:
+                    self.revealing = self.reveal(px, py)
             elif e.entity_type == 'pickup':
                 pickup_item = item_from_pickup(e)
                 if pickup_item:
@@ -468,6 +479,10 @@ class GameWorld:
     # reveal a tile and all connected hidden tiles including entities on them
     # stop spreading the reveal if you hit a door or a non hidden tile
     def reveal(self, x, y):
+
+        iterations = 0
+        iterations_per = 4
+
         to_check = set([(x, y)])
         checked = set([])
 
@@ -514,6 +529,11 @@ class GameWorld:
 
                         # Ok so this is a hidden tile, add it to the list
                         to_check.add((nx, ny))
+
+                        iterations += 1
+                        if iterations % iterations_per == 0:
+                            self.update_whole_pathfinding_map()
+                            yield 1
 
                 to_check.remove((px, py))
 
