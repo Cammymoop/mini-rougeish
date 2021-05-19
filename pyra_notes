@@ -1,0 +1,7 @@
+
+needs pygame installed
+run using gl4es python3
+
+something is really killing the framerate while running the reveal algorithm (the first frame the algorithm runs is very slow so it tries to generate a lot the next frame which is even slower)
+
+framerate in general degrades over time, I think this is from increasing number of entities being rendered but could be other stuff effecting it too

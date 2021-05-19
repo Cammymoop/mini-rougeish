@@ -483,7 +483,7 @@ class GameWorld:
     def reveal(self, x, y):
 
         iterations = 0
-        iterations_per = 4
+        iterations_per = 2
 
         to_check = set([(x, y)])
         checked = set([])
@@ -532,12 +532,12 @@ class GameWorld:
                         # Ok so this is a hidden tile, add it to the list
                         to_check.add((nx, ny))
 
-                        iterations += 1
-                        if iterations % iterations_per == 0:
-                            self.update_whole_pathfinding_map()
-                            yield 1
-
                 to_check.remove((px, py))
+
+                iterations += 1
+                if iterations % iterations_per == 0:
+                    self.update_whole_pathfinding_map()
+                    yield 1
 
             infinity_protection -= 1
             if infinity_protection < 0:
