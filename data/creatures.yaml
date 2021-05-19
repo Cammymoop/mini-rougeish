@@ -44,3 +44,13 @@ eyepod:
     loot:
         - {set: small_enemy, quantity: 2}
         - {set: rare_enemy, quantity: 1}
+mini_pod:
+    image: mini_pod
+    attributes:
+        hp: 2
+        base_attack: 3
+        movement_pattern: chase
+        move_wait: 0
+        random_wait: 6
+    loot:
+        - {set: small_enemy, quantity: 3}

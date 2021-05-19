@@ -8,6 +8,11 @@ heal_potion:
     usage: consumable
     effects:
         - 'health +4'
+boost_potion:
+    stackable: True
+    usage: consumable
+    effects:
+        - 'linger 12 damage +1'
 red_axe:
     stackable: False
     usage: equip

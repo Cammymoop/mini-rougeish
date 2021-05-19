@@ -429,12 +429,18 @@ def room_furnisher(world, chunk_properties, tile_map, all_tiles):
     enemy_sets = [
         ['goon'],
         ['goon', 'goon', 'goon', 'cubeo'],
-        ['cubeo', 'cubeo', 'big_cubeo']
-    ];
-    # Random chance of eyepod in room with 1 enemy
-    if include_enemies == 1 and random.randint(1, 9) < 2:
-        enemy_sets = [['eyepod']]
-    enemy_set = random.choice(enemy_sets)
+        ['cubeo', 'cubeo', 'big_cubeo'],
+        ['mini_pod', 'cubeo', 'goon'],
+        ['mini_pod'],
+        ['eyepod'],
+    ]
+    enemy_set_weights = [6, 6, 6, 4, 2, 1]
+    enemy_set = random.choices(enemy_sets, weights=enemy_set_weights)[0]
+
+    # Only spawn eyepod by himself
+    if enemy_set == ['eyepod']:
+        include_enemies = 1
+
     for i in range(include_enemies):
         spot = random.choice(unused_spots)
         unused_spots.remove(spot)

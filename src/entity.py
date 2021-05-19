@@ -272,6 +272,10 @@ class Entity(BasicSprite):
             if self.wait_counter > 0:
                 self.wait_counter -= 1
                 return
+            if hasattr(self, 'random_wait'):
+                do_wait = random.randint(1, self.random_wait) == 1
+                if do_wait:
+                    return
 
             if self.movement_pattern == 'chase':
                 deltas = self.pathfind_follow_player()

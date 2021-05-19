@@ -38,6 +38,7 @@ class GameWorld:
 
         self.ui_group = OffsetGroup()
 
+        self.cur_half_chunk_coords = (0, 0)
         self.floor_data = generate_floor()
         self.starting_chunk = self.floor_data['starting-chunk']
         if GameSettings.debug_mode:
@@ -52,6 +53,9 @@ class GameWorld:
         self.clear_entities_at(start_x, start_y)
         self.player = Entity(self, start_x, start_y, True, 'creature', 'player')
         self.entity_group.add(self.player)
+
+        # keep track when the player moves into a new half-chunk grid for rendering purposes
+        self.cur_half_chunk_coords = self.get_p_half_chunk_coords()
 
         scr_width = get_internal_res()[0]
         blip_x = scr_width - 8
@@ -246,6 +250,10 @@ class GameWorld:
     def after_player_move(self):
         px, py = self.player.get_grid_x_y()
         stuff_here = self.what_is_at(px, py)
+
+        if self.get_p_half_chunk_coords() != self.cur_half_chunk_coords:
+            self.cur_half_chunk_coords = self.get_p_half_chunk_coords()
+            self.update_render_list()
 
         for e in stuff_here['entities']:
             if e.entity_type == 'door':
@@ -547,6 +555,11 @@ class GameWorld:
         _, _, cx, cy = self.translate_chunk_coords(x, y)
         return self.pending_chunk_exists(cx, cy)
 
+    def get_p_half_chunk_coords(self):
+        p_x, p_y = self.player.get_grid_x_y()
+        half_chunk = TM_CHUNK_SIZE/2
+        return math.floor(p_x/half_chunk), math.floor(p_y/half_chunk)
+
     # translate world x, y -> in_chunk_x, in_chunk_y, chunk_x, chunk_y
     def translate_chunk_coords(self, x, y):
         return x % TM_CHUNK_SIZE, y % TM_CHUNK_SIZE, x // TM_CHUNK_SIZE, y // TM_CHUNK_SIZE
@@ -557,8 +570,15 @@ class GameWorld:
 
     def update_render_list(self):
         self.render_list = []
+        render_x = math.ceil(self.cur_half_chunk_coords[0]/2)
+        render_y = math.ceil(self.cur_half_chunk_coords[1]/2)
         for row in self.maps.keys():
-            for t_map in self.maps[row].values():
+            if row < render_y - 1 or row > render_y:
+                continue
+            for col in self.maps[row]:
+                if col < render_x - 1 or col > render_x:
+                    continue
+                t_map = self.maps[row][col]
                 self.render_list.append(t_map)
 
     def do_camera_shake(self, length, intensity=4):
