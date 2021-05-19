@@ -40,8 +40,6 @@ def main(real_screen):
     screen = pygame.Surface(get_internal_res())
     screen = screen.convert()
 
-    pygame.display.set_caption(random.choice(["Urgh", "Banguin", "Sandomius", "Ess", "Vee Sheem Han", "Spakio", "Gevenera", "Soll Bax Me"]))
-
     background = pygame.Surface(screen.get_size())
     background = background.convert()
     background.fill((8, 20, 30))

@@ -24,6 +24,9 @@ class GameWorld:
         self.clock = clock
         random.seed()
 
+        with open("data/titles") as f_titles:
+            pygame.display.set_caption(random.choice(f_titles.readlines()))
+
         self.restart = False
 
         self.render_list = []
