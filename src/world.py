@@ -131,7 +131,9 @@ class GameWorld:
 
         if self.revealing:
             try:
-                next(self.revealing)
+                frames = math.ceil(self.clock.get_time() / (100/6))
+                for i in range(frames):
+                    next(self.revealing)
             except StopIteration as s:
                 self.revealing = False
 
