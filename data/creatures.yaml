@@ -42,4 +42,5 @@ eyepod:
         no_wait_on_hit: true
         paths: true
     loot:
+        - {set: small_enemy, quantity: 2}
         - {set: rare_enemy, quantity: 1}

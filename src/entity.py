@@ -9,7 +9,7 @@ import random
 
 from constants import *
 from sprite import BasicSprite
-from inventory import Inventory
+from inventory import Inventory, get_item_data
 
 # Keep static data loaded from yaml files
 with open('data/loot_sets.yaml') as loot_sets_data:
@@ -84,6 +84,7 @@ class Entity(BasicSprite):
         self.moves = False
         self.animates = False
         self.loot = []
+        self.ongoing_effects = []
 
         # Special defaults
         if ent_type == 'bustable':
@@ -152,19 +153,46 @@ class Entity(BasicSprite):
     ##############################
     # Inventory, Items
     def drop_item(self, item):
-        entity = self.world.add_entity_at(self.grid_x, self.grid_y, self.visible, 'pickup', item.item_type)
+        data = get_item_data(item.item_type)
+        img = item.item_type
+        if 'big_stack_size' in data:
+            if item.quantity >= data['big_stack_size']:
+                img = data['big_stack_img']
+        entity = self.world.add_entity_at(self.grid_x, self.grid_y, self.visible, 'pickup', img)
         entity.quantity = item.quantity
 
     def equipment_update(self):
         if not self.has_inventory:
             return
+
+        new_effects = []
+        for effect in self.ongoing_effects:
+            if effect['source'] == 'equipment':
+                continue
+            new_effects.append(effect)
+        self.ongoing_effects = new_effects
+
+        self.equipped = self.inventory.get_all_equipped()
+        for item in self.equipped:
+            d = get_item_data(item.item_type)
+            if 'effects' in d:
+                for effect in d['effects']:
+                    effect_name, effect_properties = effect.split(' ')
+                    self.ongoing_effects.append({'source': 'equipment', 'name': effect_name, 'properties': effect_properties})
     # Inventory, Items
     ##############################
 
     ##############################
     # Combat, AI, Visibility etc
     def get_attack(self):
-        return {'amount': self.base_attack, 'damage_types': []}
+        bonus_damage = 0
+        damage_types = []
+        for effect in self.ongoing_effects:
+            if effect['name'] == 'damage':
+                bonus_damage += int(effect['properties'])
+            elif effect['name'] == 'damage_type':
+                damage_types.append(effect['properties'])
+        return {'amount': self.base_attack + bonus_damage, 'damage_types': damage_types}
 
     def take_damage(self, damage):
         self.hp -= damage['amount']

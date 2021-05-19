@@ -19,10 +19,10 @@ class Inventory:
 
     def add_item(self, item):
         item_index = self.has_item_type(item.item_type)
-        if item_index is False:
-            self.items.append(item)
-        else:
+        if item_index is not False and is_stackable(item.item_type):
             self.items[item_index].quantity += item.quantity
+        else:
+            self.items.append(item)
 
     def remove_item(self, item_index, drop):
         if drop and self.entity:
@@ -44,7 +44,6 @@ class Inventory:
         item = self.items[item_index]
         data = s_item_data[item.item_type]
         if 'usage' not in data:
-            print('dropping', item.quantity, item.item_type)
             self.remove_item(item_index, True) # Drop it
             return
 
@@ -53,11 +52,18 @@ class Inventory:
             if self.entity:
                 self.entity.equipment_update()
         elif data['usage'] == 'consumable':
-            print('consuming', 1, item.item_type)
             if self.entity:
                 for effect in data['effects']:
                     self.entity.instant_effect(effect)
             self.reduce_item(item_index)
+
+    def get_all_equipped(self):
+        equipped = []
+        for i in self.items:
+            if not i.equipped:
+                continue
+            equipped.append(i)
+        return equipped
 
 class Item:
     def __init__(self, item_type='generic', quantity=1, icon='no_img'):
@@ -78,6 +84,9 @@ def item_from_pickup(pickup):
         quantity = pickup.quantity
 
     return Item(subtype, quantity, subtype)
+
+def is_stackable(item_type):
+    return s_item_data[item_type]['stackable']
 
 def get_item_data(item_type):
     if item_type not in s_item_data:

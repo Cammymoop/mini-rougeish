@@ -1,6 +1,8 @@
 
 moni:
     stackable: True
+    big_stack_size: 10
+    big_stack_img: moni_pile
 heal_potion:
     stackable: True
     usage: consumable
@@ -11,3 +13,4 @@ red_axe:
     usage: equip
     effects:
         - 'damage +2'
+        - 'damage_type hack'

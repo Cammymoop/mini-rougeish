@@ -4,7 +4,7 @@ small_enemy:
     - {type: pickup, subtype: heal_potion, weight: 1}
 rare_enemy:
     - {type: pickup, subtype: moni_pile, amount: 30, weight: 6}
-    - {type: pickup, subtype: heal_potion, weight: 1}
+    - {type: pickup, subtype: red_axe, weight: 4}
 pot:
     - {type: pickup, subtype: moni, weight: 10}
 chest:

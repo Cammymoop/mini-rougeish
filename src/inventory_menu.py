@@ -18,7 +18,7 @@ class InventoryMenu:
         self.cursor_sprite = BasicSprite('inv_cursor', True, 5)
         self.sprite_group.add(self.cursor_sprite)
 
-        self.font = MonoFont('0123456789', 'outline_numbers', 6, 9)
+        self.font = MonoFont('0123456789e', 'outline_numbers', 6, 9)
 
         self.cursor_enabled = True
 
@@ -81,6 +81,12 @@ class InventoryMenu:
                 text.set_tr_pos(pos_x + 9, pos_y + 1)
                 self.sprites.append(text)
                 self.sprite_group.add(text)
+
+            if item.equipped:
+                e_text = MonoText(6, self.font, 'e', 'right')
+                e_text.set_tr_pos(pos_x + 9, pos_y - 9)
+                self.sprites.append(e_text)
+                self.sprite_group.add(e_text)
 
         cursor_x, cursor_y = slot_positions[self.cursor_index]
         self.cursor_sprite.set_pos(cursor_x, cursor_y)
