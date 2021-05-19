@@ -30,7 +30,7 @@ class InventoryMenu:
         self.button_up    = self.input_manager.make_button('inv-up', 'inventory', [K_UP, K_w], lambda: self.move_cursor(0, -1))
         self.button_down  = self.input_manager.make_button('inv-down', 'inventory', [K_DOWN, K_s], lambda: self.move_cursor(0, 1))
 
-        self.button_select = self.input_manager.make_button('inv-select', 'inventory', [K_SPACE], self.select)
+        self.button_select = self.input_manager.make_button('inv-select', 'inventory', [K_SPACE, K_PAGEDOWN], self.select)
         self.button_exit   = self.input_manager.make_button('inv-exit', 'inventory', [K_ESCAPE], self.hide)
 
     def select(self):

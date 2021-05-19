@@ -89,6 +89,7 @@ class GameWorld:
         self.button_left  = self.input_manager.make_button('left', 'game', [K_LEFT, K_a], lambda: self.que_move(-1, 0), True)
         self.button_up    = self.input_manager.make_button('up', 'game', [K_UP, K_w], lambda: self.que_move(0, -1), True)
         self.button_down  = self.input_manager.make_button('down', 'game', [K_DOWN, K_s], lambda: self.que_move(0, 1), True)
+        self.button_down  = self.input_manager.make_button('wait', 'game', [K_SPACE, K_PAGEDOWN], lambda: self.que_move(0, 0), True)
 
         self.exit_next = False
         def c_exit():
@@ -99,7 +100,7 @@ class GameWorld:
             self.reset_next = True
         self.button_exit  = self.input_manager.make_button('reset', False, [K_r], c_reset)
 
-        self.button_menu  = self.input_manager.make_button('menu', False, [K_RETURN, K_e], self.inventory_toggle)
+        self.button_menu  = self.input_manager.make_button('menu', False, [K_RETURN, K_e, K_END], self.inventory_toggle)
 
         self.inv_display = InventoryMenu(self.input_manager, self.ui_group, self.player.inventory)
         self.inv_display.hide()
@@ -132,12 +133,6 @@ class GameWorld:
                     GameSettings.debug_mode = not GameSettings.debug_mode
                 elif event.key == K_p:
                     GameSettings.enable_fps = not GameSettings.enable_fps
-
-                if self.keyboard_focus == 'game':
-                    if event.key == K_SPACE:
-                        if not self.animating:
-                            self.time_advance()
-                            self.animating = True
 
         if self.animating:
             tick_length = self.clock.get_time()
@@ -192,7 +187,10 @@ class GameWorld:
         if not self.player.living:
             return
         dx, dy = self.move_que.popleft()
-        self.attempt_move(self.player, dx, dy)
+        if dx == 0 and dy == 0:
+            pass # wait
+        else:
+            self.attempt_move(self.player, dx, dy)
 
         self.time_advance()
         self.animating = True
