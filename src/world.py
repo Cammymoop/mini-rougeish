@@ -5,6 +5,7 @@ from constants import *
 import math
 import collections
 import heapq
+import time
 
 from sprite import BasicSprite
 from offset import OffsetGroup
@@ -110,6 +111,7 @@ class GameWorld:
         self.inv_display.hide()
 
         # Reveal the room where the player starts
+        self.update_whole_pathfinding_map()
         self.revealing = False
         self.revealing = self.reveal(start_x, start_y)
 
@@ -351,22 +353,31 @@ class GameWorld:
         #print("And " + str(skipped) + " skipped out of " + str(total) + ", " + str(total - skipped) + " checked")
 
     # Dont call with coordinates in an unloaded chunk
-    def update_pathfinding_node(self, world_x, world_y):
-        pf_x, pf_y = (world_x + self.pf_offset_x, world_y + self.pf_offset_y)
+    # Coordinates in world space unless pf_coords is true
+    # If you already have the entity list then pass it in as stuff which is much faster
+    def update_pathfinding_node(self, pos_x, pos_y, pf_coords=False, stuff=False):
+        if pf_coords:
+            world_x, world_y = (pos_x - self.pf_offset_x, pos_y - self.pf_offset_y)
+            pf_x, pf_y = (pos_x, pos_y)
+        else:
+            world_x, world_y = (pos_x, pos_y)
+            pf_x, pf_y = (pos_x + self.pf_offset_x, pos_y + self.pf_offset_y)
 
         if min(pf_x, pf_y) < 0 or pf_x > PATHFINDING_WIDTH - 1 or pf_y > PATHFINDING_HEIGHT - 1:
             print("Tried to update outside pathfinding space")
             print((world_x, world_y), (pf_x, pf_y))
             return
 
-        tile = self.get_tile_from_world_coord(world_x, world_y)
-        if not tile or not tile.visible:
-            self.pathfinding_map[pf_x][pf_y] = 10
-            return
+        if not stuff:
+            tile = self.get_tile_from_world_coord(world_x, world_y)
+            if not tile or not tile.visible:
+                self.pathfinding_map[pf_x][pf_y] = 10
+                return
 
-        self.pathfinding_map[pf_x][pf_y] = 0
+            self.pathfinding_map[pf_x][pf_y] = 0
 
-        stuff = self.what_is_at(world_x, world_y)
+            stuff = self.what_is_at(world_x, world_y)
+
         for entity in stuff['entities']:
             if entity.entity_type == 'bustable':
                 self.pathfinding_map[pf_x][pf_y] = max(3, self.pathfinding_map[pf_x][pf_y])
@@ -493,6 +504,10 @@ class GameWorld:
 
         adjacents = [(-1, 0), (0, -1), (1, 0), (0, 1)]
 
+        start_time = time.time()
+        total_runtime = 0
+        self_time = 0
+
         infinity_protection = 200
         while len(to_check) > 0:
             for px, py in to_check.copy():
@@ -512,6 +527,7 @@ class GameWorld:
                             e.visible = False
 
                 checked.add((px, py))
+                self.update_pathfinding_node(px, py, stuff=stuff_here)
 
                 if not stop_here:
                     # Check all adjecent tiles for hidden tiles to show
@@ -539,8 +555,11 @@ class GameWorld:
 
                 iterations += 1
                 if iterations % iterations_per == 0:
-                    self.update_whole_pathfinding_map()
+                    self_time += time.time() - start_time
+                    #self.update_whole_pathfinding_map()
+                    total_runtime += time.time() - start_time
                     yield 1
+                    start_time = time.time()
 
             infinity_protection -= 1
             if infinity_protection < 0:
@@ -548,8 +567,14 @@ class GameWorld:
                 return
             # End while
 
+        self_time += time.time() - start_time
+
         # More tiles available for movement
         self.update_whole_pathfinding_map()
+
+        # total time logging
+        total_runtime += time.time() - start_time
+        #print("reveal runtime (over multiple frames) self: " + str(round(self_time/1000, 7)) + " total: " + str(round(total_runtime/1000, 7)))
                 
 
     def get_tile_from_world_coord(self, x, y):
