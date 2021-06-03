@@ -46,8 +46,13 @@ class Entity(BasicSprite):
 
         # Figure out which image to use
         self.img_name = 'no_img'
-        if ent_type == 'bustable' or ent_type == 'pickup':
+        if ent_type == 'bustable':
             self.img_name = subtype
+        if ent_type == 'pickup':
+            self.img_name = subtype
+            item_data = get_item_data(subtype)
+            if item_data and 'icon' in item_data:
+                self.img_name = item_data['icon']
         elif ent_type == 'door':
             self.img_name = 'door'
         elif ent_type == 'creature':
@@ -177,7 +182,7 @@ class Entity(BasicSprite):
             d = get_item_data(item.item_type)
             if 'effects' in d:
                 for effect in d['effects']:
-                    effect_name, effect_properties = effect.split(' ')
+                    effect_name, effect_properties = effect.split(' ', 1)
                     self.ongoing_effects.append({'source': 'equipment', 'name': effect_name, 'properties': effect_properties})
     # Inventory, Items
     ##############################
@@ -209,7 +214,7 @@ class Entity(BasicSprite):
             self.world.do_camera_shake(0.2)
 
     def instant_effect(self, effect):
-        effect_name, effect_properties = effect.split(' ')
+        effect_name, effect_properties = effect.split(' ', 1)
         if effect_name == "health":
             amount = int(effect_properties)
             if amount < 0:

@@ -70,6 +70,9 @@ class Item:
         self.item_type = item_type
         self.quantity = quantity
         self.icon = icon
+        if item_type in s_item_data:
+            if 'icon' in s_item_data[item_type]:
+                self.icon = s_item_data[item_type]['icon']
         self.equipped = False
 
 def item_from_pickup(pickup):

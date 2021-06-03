@@ -10,6 +10,7 @@ heal_potion:
         - 'health +4'
 boost_potion:
     stackable: True
+    icon: red_potion
     usage: consumable
     effects:
         - 'linger 12 damage +1'

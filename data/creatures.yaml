@@ -14,6 +14,7 @@ goon:
         movement_pattern: naive
     loot:
         - {set: small_enemy, quantity: 1}
+        - {set: boost, quantity: 1}
 big_cubeo:
     image: big_cubeo
     attributes:
