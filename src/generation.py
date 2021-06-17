@@ -437,7 +437,7 @@ def room_furnisher(world, chunk_properties, tile_map, all_tiles):
         ['crustacean', 'crustacean', 'crustacean', 'cubeo'],
         ['eyepod'],
     ]
-    enemy_set_weights = [6, 9, 6, 6, 4, 1, 1, 12, 1]
+    enemy_set_weights = [6, 9, 6, 6, 4, 1, 1, 3, 1]
     enemy_set = random.choices(enemy_sets, weights=enemy_set_weights)[0]
 
     # Only spawn eyepod by himself
