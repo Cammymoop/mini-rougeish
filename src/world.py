@@ -163,6 +163,7 @@ class GameWorld:
                 self.animating = False 
                 self.current_anim_time = 0
                 for entity in self.entity_group.sprites():
+                    entity.post_turn()
                     if self.player == entity and entity.just_moved:
                         self.after_player_move()
 

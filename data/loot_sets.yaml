@@ -2,13 +2,24 @@
 small_enemy:
     - {type: pickup, subtype: moni, weight: 10}
     - {type: pickup, subtype: heal_potion, weight: 1}
+    - {type: pickup, subtype: boost_potion, weight: 1}
 rare_enemy:
     - {type: pickup, subtype: moni_pile, amount: 30, weight: 6}
     - {type: pickup, subtype: red_axe, weight: 4}
 boost:
     - {type: pickup, subtype: boost_potion, weight: 1}
+potion:
+    - {type: pickup, subtype: heal_potion, weight: 1}
+    - {type: pickup, subtype: boost_potion, weight: 1}
 pot:
     - {type: pickup, subtype: moni, weight: 10}
+    - {type: pickup, subtype: boost_potion, amount: 1, weight: 1}
 chest:
     - {type: pickup, subtype: moni_pile, amount: 10, weight: 4}
-    - {type: pickup, subtype: heal_potion, weight: 4}
+    - {type: pickup, subtype: heal_potion, amount: 2, weight: 4}
+    - {type: pickup, subtype: boost_potion, amount: 2, weight: 1}
+some_money:
+    - {type: pickup, subtype: moni, weight: 10}
+    - {type: pickup, subtype: moni, amount: 2, weight: 10}
+    - {type: pickup, subtype: moni, amount: 3, weight: 5}
+    - {type: pickup, subtype: moni, amount: 5, weight: 5}

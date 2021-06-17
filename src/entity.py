@@ -155,6 +155,25 @@ class Entity(BasicSprite):
             self.animate_to(x * GRID_WIDTH, y * GRID_WIDTH, False)
         self.just_moved = True
 
+    def post_turn(self):
+        if len(self.ongoing_effects):
+            cull = []
+            for index in range(len(self.ongoing_effects)):
+                effect = self.ongoing_effects[index]
+                if 'countdown' in effect:
+                    self.ongoing_effects[index]['countdown'] = effect['countdown'] - 1
+                    if self.ongoing_effects[index]['countdown'] < 1:
+                        cull.append(index)
+
+            filtered = []
+            for index in range(len(self.ongoing_effects)):
+                if index not in cull:
+                    filtered.append(self.ongoing_effects[index])
+
+            self.ongoing_effects = filtered
+            
+
+
     ##############################
     # Inventory, Items
     def drop_item(self, item):
@@ -170,12 +189,12 @@ class Entity(BasicSprite):
         if not self.has_inventory:
             return
 
-        new_effects = []
+        filtered = []
         for effect in self.ongoing_effects:
             if effect['source'] == 'equipment':
                 continue
-            new_effects.append(effect)
-        self.ongoing_effects = new_effects
+            filtered.append(effect)
+        self.ongoing_effects = filtered
 
         self.equipped = self.inventory.get_all_equipped()
         for item in self.equipped:
@@ -221,6 +240,17 @@ class Entity(BasicSprite):
                 self.take_damage({'amount': amount})
             else:
                 self.heal(amount)
+        elif effect_name == "linger":
+            linger_val, ongoing_effect = effect_properties.split(' ', 1)
+            self.ongoing_effect('linger', ongoing_effect, int(linger_val))
+
+    # negative linger values mean linger indefinitely
+    def ongoing_effect(self, source, effect, linger=-1):
+        effect_name, effect_properties = effect.split(' ', 1)
+        effect_dict = {'source': source, 'name': effect_name, 'properties': effect_properties}
+        if linger > -1:
+            effect_dict['countdown'] = linger
+        self.ongoing_effects.append(effect_dict)
 
     def heal(self, amount):
         self.hp = min(self.max_hp, self.hp + amount)
