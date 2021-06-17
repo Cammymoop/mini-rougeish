@@ -65,3 +65,14 @@ mini_pod:
     loot:
         - {set: some_money, quantity: 1}
         - {set: boost, quantity: 2}
+crustacean:
+    image: crustacean
+    attributes:
+        hp: 2
+        base_attack: 3
+        movement_pattern: diagonal_naive
+        can_diagonal: true
+        random_wait: 3
+    loot:
+        - {set: some_money, quantity: 1}
+        - {set: potion, quantity: 1}

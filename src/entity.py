@@ -125,6 +125,7 @@ class Entity(BasicSprite):
             self.active = not self.hidden
             self.wait_counter = self.move_wait
             self.prefer_horizontal = True
+            self.prefer_horizontal_ = True
 
             if hasattr(self, 'agro_when_hit'):
                 self.agro = False
@@ -330,6 +331,8 @@ class Entity(BasicSprite):
                 deltas = self.simple_follow_player()
             elif move_pattern == 'random':
                 deltas = self.get_random_move()
+            elif move_pattern == 'diagonal_naive':
+                deltas = self.simple_follow_player(True)
             else:
                 print("Bad movement pattern: " + str(move_pattern))
                 return
@@ -382,18 +385,37 @@ class Entity(BasicSprite):
         else:
             return (0, y_delta)
 
-    def simple_follow_player(self):
+    def simple_follow_player(self, diagonal_only=False):
         player_x, player_y = self.world.get_player().get_grid_x_y()
         x_diff = player_x - self.grid_x
         y_diff = player_y - self.grid_y
 
-        horizontal = (int(math.copysign(1, x_diff)), 0)
-        vertical = (0, int(math.copysign(1, y_diff)))
-        if abs(x_diff) == abs(y_diff):
-            self.prefer_horizontal = not self.prefer_horizontal
-            return horizontal if self.prefer_horizontal else vertical
+        if not self.can_diagonal:
+            horizontal = (int(math.copysign(1, x_diff)), 0)
+            vertical = (0, int(math.copysign(1, y_diff)))
+            if abs(x_diff) == abs(y_diff):
+                self.prefer_horizontal = not self.prefer_horizontal
+                return horizontal if self.prefer_horizontal else vertical
+            else:
+                return horizontal if abs(x_diff) > abs(y_diff) else vertical
         else:
-            return horizontal if abs(x_diff) > abs(y_diff) else vertical
+            if diagonal_only:
+                if x_diff != 0 and y_diff != 0:
+                    return (int(math.copysign(1, x_diff)), int(math.copysign(1, y_diff)))
+
+                x_d = 0
+                y_d = 0
+                if x_diff == 0:
+                    self.prefer_horizontal = not self.prefer_horizontal
+                    x_d = 1 if self.prefer_horizontal else -1
+                    y_d = int(math.copysign(1, y_diff))
+                else:
+                    self.prefer_horizontal_ = not self.prefer_horizontal_
+                    y_d = 1 if self.prefer_horizontal_ else -1
+                    x_d = int(math.copysign(1, x_diff))
+                return (x_d, y_d)
+            else:
+                return (0 if x_diff == 0 else int(math.copysign(1, x_diff)), 0 if y_diff == 0 else int(math.copysign(1, y_diff)))
 
     def far_offscreen(self):
         player_x, player_y = self.world.get_player().get_grid_x_y()
