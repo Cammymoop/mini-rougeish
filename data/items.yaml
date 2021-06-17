@@ -13,7 +13,7 @@ boost_potion:
     icon: red_potion
     usage: consumable
     effects:
-        - 'linger 12 damage +1'
+        - 'linger 16 damage +1'
 red_axe:
     stackable: False
     usage: equip

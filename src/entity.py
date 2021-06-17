@@ -91,6 +91,8 @@ class Entity(BasicSprite):
         self.loot = []
         self.ongoing_effects = []
 
+        self.agro = True
+
         # Special defaults
         if ent_type == 'bustable':
             if subtype == 'chest':
@@ -123,6 +125,9 @@ class Entity(BasicSprite):
             self.active = not self.hidden
             self.wait_counter = self.move_wait
             self.prefer_horizontal = True
+
+            if hasattr(self, 'agro_when_hit'):
+                self.agro = False
 
         if self.animates:
             # Should be facing right when unflipped
@@ -225,6 +230,9 @@ class Entity(BasicSprite):
         if hasattr(self, 'wait_counter') and hasattr(self, 'no_wait_on_hit'):
             self.wait_counter = 0
 
+        if hasattr(self, 'agro_when_hit') and not self.agro:
+            self.agro = True
+
         if self.hp <= 0:
             self.die()
 
@@ -312,14 +320,18 @@ class Entity(BasicSprite):
                 if do_wait:
                     return
 
-            if self.movement_pattern == 'chase':
+            move_pattern = self.movement_pattern
+            if not self.agro and hasattr(self, 'idle_movement_pattern'):
+                move_pattern = self.idle_movement_pattern
+
+            if move_pattern == 'chase':
                 deltas = self.pathfind_follow_player()
-            elif self.movement_pattern == 'naive':
+            elif move_pattern == 'naive':
                 deltas = self.simple_follow_player()
-            elif self.movement_pattern == 'random':
+            elif move_pattern == 'random':
                 deltas = self.get_random_move()
             else:
-                print("Bad movement pattern: " + str(self.movement_pattern))
+                print("Bad movement pattern: " + str(move_pattern))
                 return
 
             if not deltas:

@@ -428,13 +428,14 @@ def room_furnisher(world, chunk_properties, tile_map, all_tiles):
 
     enemy_sets = [
         ['goon'],
+        ['peaceful_goon'],
         ['goon', 'goon', 'goon', 'cubeo'],
         ['cubeo', 'cubeo', 'big_cubeo'],
         ['mini_pod', 'cubeo', 'goon'],
         ['mini_pod'],
         ['eyepod'],
     ]
-    enemy_set_weights = [6, 6, 6, 4, 2, 1]
+    enemy_set_weights = [6, 9, 6, 6, 4, 2, 1]
     enemy_set = random.choices(enemy_sets, weights=enemy_set_weights)[0]
 
     # Only spawn eyepod by himself

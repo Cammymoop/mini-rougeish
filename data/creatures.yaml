@@ -14,6 +14,16 @@ goon:
         movement_pattern: naive
     loot:
         - {set: small_enemy, quantity: 1}
+peaceful_goon:
+    image: red_goon
+    attributes:
+        hp: 3
+        base_attack: 1
+        agro_when_hit: true
+        movement_pattern: naive
+        idle_movement_pattern: random
+    loot:
+        - {set: small_enemy, quantity: 2}
 big_cubeo:
     image: big_cubeo
     attributes:
